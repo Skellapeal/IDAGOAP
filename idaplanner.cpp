@@ -8,6 +8,32 @@
 #include <vector>
 #include <limits>
 
+bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &current_goal)
+{
+    const auto& effects = action->get_effects();
+
+    return std::ranges::any_of(current_goal.get_states(),
+        [&effects](const std::pair<const std::string, int>& goal_entry)
+        {
+            const auto& [key, goal_value] = goal_entry;
+            return effects.contains(key) && effects.at(key) == goal_value;
+        });
+}
+
+bool idaplanner::has_precondition_conflict(const gaction *action, const gworld_model &current_goal)
+{
+    return std::ranges::any_of(action->get_preconditions(),
+        [&current_goal](const std::pair<const std::string, int>& precondition_entry)
+        {
+            const auto& [precondition_key, precondition_value] = precondition_entry;
+            if (const auto existing_value = current_goal.get_state(precondition_key))
+            {
+                return *existing_value != precondition_value;
+            }
+            return false;
+        });
+}
+
 bool idaplanner::inverse_depth_first_search(
     gworld_model& current_goal,
     const gworld_model& initial_state,
@@ -19,7 +45,7 @@ bool idaplanner::inverse_depth_first_search(
     const int predicted_cost = heuristic.estimate(initial_state, current_goal);
     const int total_cost = predicted_cost + accumulated_cost;
 
-    if (auto cached_cost = table.lookup(current_goal))
+    if (const auto cached_cost = table.lookup(current_goal))
     {
         if (*cached_cost <= total_cost)
         {
@@ -33,28 +59,14 @@ bool idaplanner::inverse_depth_first_search(
         return false;
     }
 
-    if (is_goal_reached(current_goal, initial_state))
-    {
-        return true;
-    }
+    if (is_goal_reached(current_goal, initial_state)) return true;
 
     for (const gaction* action : available_actions)
     {
-        bool relevant = false;
-        for (const auto& [key, goal_value] : current_goal.get_states())
-        {
-            if (const auto& effects = action->get_effects(); effects.contains(key)
-                && effects.at(key) == goal_value)
-            {
-                relevant = true;
-                break;
-            }
-        }
-
-        if (!relevant) continue;
+        if (!is_action_relevant(action, current_goal)) continue;
+        if (has_precondition_conflict(action, current_goal)) continue;
 
         const gworld_model previous_goal = current_goal;
-
         for (const auto &key: action->get_effects() | std::views::keys)
         {
             current_goal.remove_state(key);
@@ -80,7 +92,8 @@ bool idaplanner::inverse_depth_first_search(
     return false;
 }
 
-bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start) {
+bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start)
+{
     for (const auto& [key, value] : regressed_goal.get_states())
     {
         if (auto start_value = start.get_state(key); !start_value || *start_value != value)
@@ -97,6 +110,17 @@ std::vector<const gaction*> idaplanner::plan(
     const std::span<const gaction*> available_actions,
     const gheuristic& heuristic)
 {
+    std::vector<const gaction*> usable_actions;
+    for (const auto* action : available_actions)
+    {
+        if (action -> can_run())
+        {
+            usable_actions.push_back(action);
+        }
+    }
+
+    if (usable_actions.empty()) return {};
+
     gworld_model current_goal = goal_state;
     int bound = heuristic.estimate(initial_state, goal_state);
     std::vector<const gaction*> plan;
@@ -106,7 +130,7 @@ std::vector<const gaction*> idaplanner::plan(
         table.clear();
         int next_bound = std::numeric_limits<int>::max();
 
-        if (inverse_depth_first_search(current_goal, initial_state, available_actions, heuristic,
+        if (inverse_depth_first_search(current_goal, initial_state, usable_actions, heuristic,
                                        0,bound, next_bound, plan))
         {
             std::ranges::reverse(plan);

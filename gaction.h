@@ -29,6 +29,7 @@ public:
     [[nodiscard]] int get_cost() const { return cost; }
     [[nodiscard]] const std::unordered_map<std::string, int>& get_preconditions() const { return preconditions; }
     [[nodiscard]] const std::unordered_map<std::string, int>& get_effects() const { return effects; }
+    [[nodiscard]] virtual bool can_run() const { return true; }
 
     bool check_preconditions(const gworld_model* world_model) const;
     void apply_effects(gworld_model* world_model) const;

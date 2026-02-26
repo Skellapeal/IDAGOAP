@@ -24,6 +24,9 @@ class idaplanner
 
     [[nodiscard]] static bool is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start);
 
+    [[nodiscard]] static bool is_action_relevant(const gaction* action, const gworld_model& current_goal);
+    [[nodiscard]] static bool has_precondition_conflict(const gaction *action, const gworld_model &current_goal);
+
 public:
     std::vector<const gaction*> plan(
         const gworld_model &initial_state,
