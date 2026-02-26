@@ -29,6 +29,22 @@ public:
     [[nodiscard]] int get_cost() const { return cost; }
     [[nodiscard]] const std::unordered_map<std::string, int>& get_preconditions() const { return preconditions; }
     [[nodiscard]] const std::unordered_map<std::string, int>& get_effects() const { return effects; }
+
+    /**
+    * @brief Checks if this action is statically available.
+     *
+     * ONLY check for properties that CANNOT change during plan execution:
+     * - Agent skills/capabilities
+     * - Global game flags
+     * - Permission/authorization
+     *
+     * DO NOT check for:
+     * - Resources (might be acquired mid-plan)
+     * - Items (might be crafted mid-plan)
+     * - Dynamic world state
+     *
+     * Use preconditions for dynamic requirements instead.
+     */
     [[nodiscard]] virtual bool can_run() const { return true; }
 
     bool check_preconditions(const gworld_model* world_model) const;
