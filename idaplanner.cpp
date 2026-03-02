@@ -42,14 +42,38 @@ bool idaplanner::inverse_depth_first_search(
     const int accumulated_cost, const int cost_limit, int& next_cost_limit,
     std::vector<const gaction*>& plan)
 {
+    if (current_options.time_budget_ms >= 0)
+    {
+        const auto now = std::chrono::steady_clock::now();
+        if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
+            elapsed > current_options.time_budget_ms)
+        {
+            return false;
+        }
+    }
+
+    if (depth > current_options.max_depth)
+    {
+        return false;
+    }
+
+    ++nodes_expanded;
+    if (nodes_expanded > current_options.max_nodes)
+    {
+        return false;
+    }
+
     const int predicted_cost = heuristic.estimate(initial_state, current_goal);
     const int total_cost = predicted_cost + accumulated_cost;
 
-    if (const auto cached_cost = table.lookup(current_goal))
+    if (current_options.use_transposition_table)
     {
-        if (*cached_cost <= total_cost)
+        if (const auto cached_cost = table.lookup(current_goal))
         {
-            return false;
+            if (*cached_cost <= total_cost)
+            {
+                return false;
+            }
         }
     }
 
@@ -88,7 +112,11 @@ bool idaplanner::inverse_depth_first_search(
         current_goal = previous_goal;
     }
 
-    table.store(current_goal, total_cost);
+    if (current_options.use_transposition_table)
+    {
+        table.store(current_goal, total_cost);
+    }
+
     return false;
 }
 
@@ -108,8 +136,16 @@ std::vector<const gaction*> idaplanner::plan(
     const gworld_model& initial_state,
     const gworld_model& goal_state,
     const std::span<const gaction*> available_actions,
-    const gheuristic& heuristic)
+    const gheuristic& heuristic,
+    const planner_options& options)
 {
+    current_options = options;
+    nodes_expanded = 0;
+    if (options.time_budget_ms >= 0)
+    {
+        start_time = std::chrono::steady_clock::now();
+    }
+
     std::vector<const gaction*> usable_actions;
     for (const auto* action : available_actions)
     {

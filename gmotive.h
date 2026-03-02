@@ -9,8 +9,15 @@
 
 class gmotive
 {
+    gworld_model desired_state;
+    int priority = 0;
+
 public:
-    bool is_satisfied(gworld_model world_model);
+    gmotive(gworld_model desired, int priority = 0) : desired_state(std::move(desired)), priority(priority) {}
+
+    [[nodiscard]] int get_priority() const { return priority; }
+    [[nodiscard]] const gworld_model& get_desired_state() const { return desired_state; }
+    [[nodiscard]] bool is_satisfied(const gworld_model &world_model) const;
 };
 
 

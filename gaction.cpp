@@ -3,14 +3,14 @@
 //
 
 #include "gaction.h"
-
 #include "gworld_model.h"
 
 bool gaction::check_preconditions(const gworld_model* world_model) const
 {
     for (const auto& [key, value] : preconditions)
     {
-        if (world_model->get_state(key) != value)
+        if (auto current = world_model->get_state(key);
+            !current || *current != value)
         {
             return false;
         }

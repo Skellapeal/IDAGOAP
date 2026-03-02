@@ -5,7 +5,10 @@
 #ifndef IDAGOAP_GWORLD_MODEL_H
 #define IDAGOAP_GWORLD_MODEL_H
 #include <optional>
+#include <variant>
 #include "gaction.h"
+
+using gvalue = std::variant<int, bool, float>;
 
 class gworld_model
 {
