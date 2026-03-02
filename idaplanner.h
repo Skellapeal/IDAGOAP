@@ -18,6 +18,7 @@ struct planner_options
     int max_nodes = std::numeric_limits<int>::max();
     int time_budget_ms = -1;
     bool use_transposition_table = true;
+    int max_transposition_size = std::numeric_limits<int>::max();
 };
 
 class idaplanner

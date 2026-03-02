@@ -15,6 +15,11 @@ std::optional<int> gtranpos_table::lookup(const gworld_model &state) const
 
 void gtranpos_table::store(const gworld_model &state, const int cost)
 {
+    if (table.size() >= max_size)
+    {
+        table.clear();
+    }
+
     table[state] = cost;
 }
 

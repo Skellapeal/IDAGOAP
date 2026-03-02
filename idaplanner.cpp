@@ -161,6 +161,8 @@ std::vector<const gaction*> idaplanner::plan(
     int bound = heuristic.estimate(initial_state, goal_state);
     std::vector<const gaction*> plan;
 
+    table.set_max_size(current_options.max_transposition_size);
+
     while (true)
     {
         table.clear();
