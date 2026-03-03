@@ -8,6 +8,8 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include "gworld_model.h"
+#include "gtypes.h"
 
 class gworld_model;
 
@@ -17,8 +19,8 @@ protected:
     std::string name;
     int cost = 0.0f;
 
-    std::unordered_map<std::string, int> preconditions;
-    std::unordered_map<std::string, int> effects;
+    std::unordered_map<std::string, gvalue> preconditions;
+    std::unordered_map<std::string, gvalue> effects;
 
 public:
     gaction(std::string name, const int cost) : name(std::move(name)), cost(cost) {}
@@ -27,8 +29,8 @@ public:
 
     [[nodiscard]] const std::string& get_name() const { return name; }
     [[nodiscard]] int get_cost() const { return cost; }
-    [[nodiscard]] const std::unordered_map<std::string, int>& get_preconditions() const { return preconditions; }
-    [[nodiscard]] const std::unordered_map<std::string, int>& get_effects() const { return effects; }
+    [[nodiscard]] const std::unordered_map<std::string, gvalue>& get_preconditions() const { return preconditions; }
+    [[nodiscard]] const std::unordered_map<std::string, gvalue>& get_effects() const { return effects; }
 
     /**
     * @brief Checks if this action is statically available.

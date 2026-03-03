@@ -3,6 +3,7 @@
 //
 
 #include "idaplanner.h"
+#include "gtypes.h"
 #include <algorithm>
 #include <ranges>
 #include <vector>
@@ -13,7 +14,7 @@ bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &c
     const auto& effects = action->get_effects();
 
     return std::ranges::any_of(current_goal.get_states(),
-        [&effects](const std::pair<const std::string, int>& goal_entry)
+        [&effects](const std::pair<const std::string, gvalue>& goal_entry)
         {
             const auto& [key, goal_value] = goal_entry;
             return effects.contains(key) && effects.at(key) == goal_value;
@@ -23,7 +24,7 @@ bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &c
 bool idaplanner::has_precondition_conflict(const gaction *action, const gworld_model &current_goal)
 {
     return std::ranges::any_of(action->get_preconditions(),
-        [&current_goal](const std::pair<const std::string, int>& precondition_entry)
+        [&current_goal](const std::pair<const std::string, gvalue>& precondition_entry)
         {
             const auto& [precondition_key, precondition_value] = precondition_entry;
             if (const auto existing_value = current_goal.get_state(precondition_key))

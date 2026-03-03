@@ -7,8 +7,7 @@
 #include <optional>
 #include <variant>
 #include "gaction.h"
-
-using gvalue = std::variant<int, bool, float>;
+#include "gtypes.h"
 
 class gworld_model
 {

@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(IDAGOAP STATIC
         library.cpp idaplanner.cpp gaction.cpp gworld_model.cpp
         gmotive.cpp gheuristic.cpp gtranpos_table.cpp
+        gtypes.h
 )
 
 target_include_directories(IDAGOAP PUBLIC
