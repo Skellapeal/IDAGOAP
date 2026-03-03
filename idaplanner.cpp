@@ -41,7 +41,8 @@ bool idaplanner::inverse_depth_first_search(
     const std::span<const gaction*> available_actions,
     const gheuristic& heuristic,
     const int accumulated_cost, const int cost_limit, int& next_cost_limit,
-    std::vector<const gaction*>& plan)
+    std::vector<const gaction*>& plan,
+    const int depth)
 {
     if (current_options.time_budget_ms >= 0)
     {
@@ -104,7 +105,7 @@ bool idaplanner::inverse_depth_first_search(
         plan.push_back(action);
 
         if (inverse_depth_first_search(current_goal, initial_state, available_actions, heuristic,
-                                       accumulated_cost + action->get_cost(), cost_limit, next_cost_limit, plan))
+                                       accumulated_cost + action->get_cost(), cost_limit, next_cost_limit, plan, depth + 1))
         {
             return true;
         }

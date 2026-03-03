@@ -34,7 +34,8 @@ class idaplanner
         std::span<const gaction*> available_actions,
         const gheuristic &heuristic,
         int accumulated_cost, int cost_limit, int &next_cost_limit,
-        std::vector<const gaction*> &plan);
+        std::vector<const gaction*> &plan,
+        int depth = 0);
 
     [[nodiscard]] static bool is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start);
 
