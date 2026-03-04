@@ -13,11 +13,9 @@
 #include "../gplan_result.h"
 #include "test_actions.h"
 
-// Simple test counter
 int tests_passed = 0;
 int tests_failed = 0;
 
-// Test macro
 #define TEST(name) \
     void name(); \
     struct name##_runner { \
@@ -38,7 +36,6 @@ int tests_failed = 0;
     } name##_instance; \
     void name()
 
-// Helper: print plan
 void print_plan(const gplan_result& result)
 {
     std::cout << "\n";
@@ -65,7 +62,6 @@ void print_plan(const gplan_result& result)
 
 TEST(test_simple_single_action_plan)
 {
-    // Setup: Need wood, and we can gather it
     gworld_model initial;
     initial.set_int("has_wood", 0);
 
@@ -78,12 +74,10 @@ TEST(test_simple_single_action_plan)
     gheuristic heuristic;
     idaplanner planner;
 
-    // Plan
     auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
-    // Verify
     assert(result.success());
     assert(result.size() == 1);
     assert(result.actions[0]->get_name() == "GatherWood");
@@ -93,7 +87,6 @@ TEST(test_simple_single_action_plan)
 
 TEST(test_two_step_plan)
 {
-    // Setup: Need a tool, requires gathering wood first
     gworld_model initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_tool", 0);
@@ -112,7 +105,6 @@ TEST(test_two_step_plan)
 
     print_plan(result);
 
-    // Verify correct sequence: gather wood -> craft tool
     assert(result.success());
     assert(result.size() == 2);
     assert(result.actions[0]->get_name() == "GatherWood");
@@ -122,7 +114,6 @@ TEST(test_two_step_plan)
 
 TEST(test_complex_multi_resource_plan)
 {
-    // Setup: Build shelter requires wood + stone
     gworld_model initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
@@ -148,17 +139,14 @@ TEST(test_complex_multi_resource_plan)
 
     print_plan(result);
 
-    // Verify: should gather both resources then build
     assert(result.success());
     assert(result.size() == 3);
-    // Order of gathering doesn't matter, but build must be last
     assert(result.actions[2]->get_name() == "BuildShelter");
-    assert(result.final_cost == 45); // 10 + 15 + 20
+    assert(result.final_cost == 45);
 }
 
 TEST(test_no_solution_exists)
 {
-    // Setup: Want a tool but no gather wood action available
     gworld_model initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_tool", 0);
@@ -167,7 +155,6 @@ TEST(test_no_solution_exists)
     goal.set_int("has_tool", 1);
 
     craft_tool_action craft_tool;
-    // Only craft action available, can't get wood!
     std::vector<const gaction*> actions = { &craft_tool };
 
     gheuristic heuristic;
@@ -177,7 +164,6 @@ TEST(test_no_solution_exists)
 
     print_plan(result);
 
-    // Verify failure
     assert(!result.success());
     assert(result.status == gplan_status::NoSolutionExists);
     assert(result.empty());
@@ -185,7 +171,6 @@ TEST(test_no_solution_exists)
 
 TEST(test_already_at_goal)
 {
-    // Setup: Already have what we want
     gworld_model initial;
     initial.set_int("has_wood", 1);
 
@@ -202,7 +187,6 @@ TEST(test_already_at_goal)
 
     print_plan(result);
 
-    // Should return empty plan with success
     assert(result.success());
     assert(result.empty());
     assert(result.final_cost == 0);
@@ -210,7 +194,6 @@ TEST(test_already_at_goal)
 
 TEST(test_disabled_action_filtered)
 {
-    // Setup: Disabled action should be filtered by can_run()
     gworld_model initial;
     initial.set_int("has_wood", 0);
 
@@ -229,7 +212,6 @@ TEST(test_disabled_action_filtered)
 
     print_plan(result);
 
-    // Should succeed using only enabled action
     assert(result.success());
     assert(result.size() == 1);
     assert(result.actions[0]->get_name() == "GatherWood");
@@ -237,7 +219,6 @@ TEST(test_disabled_action_filtered)
 
 TEST(test_node_limit_reached)
 {
-    // Setup: Complex problem with very low node limit
     gworld_model initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
@@ -259,21 +240,19 @@ TEST(test_node_limit_reached)
     idaplanner planner;
 
     planner_options options;
-    options.max_nodes = 5; // Very restrictive
+    options.max_nodes = 5;
 
     auto result = planner.plan(initial, goal, actions, heuristic, options);
 
     print_plan(result);
 
-    // Should hit node limit
     assert(!result.success());
     assert(result.status == gplan_status::NodeLimitReached);
-    assert(result.nodes_expanded <= 6); // May expand one more before checking
+    assert(result.nodes_expanded <= 6);
 }
 
 TEST(test_time_budget_enforced)
 {
-    // Setup: Same complex problem with tiny time budget
     gworld_model initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
@@ -294,13 +273,12 @@ TEST(test_time_budget_enforced)
     idaplanner planner;
 
     planner_options options;
-    options.time_budget_ms = 1; // 1ms - very tight
+    options.time_budget_ms = 1;
 
     auto result = planner.plan(initial, goal, actions, heuristic, options);
 
     print_plan(result);
 
-    // Might succeed (if fast) or timeout
     if (!result.success())
     {
         assert(result.status == gplan_status::TimedOut);
@@ -311,13 +289,11 @@ TEST(test_time_budget_enforced)
         std::cout << "  (Succeeded within time budget)\n";
     }
 
-    // Either way, time should be recorded
     assert(result.planning_time_ms >= 0);
 }
 
 TEST(test_heuristic_provides_guidance)
 {
-    // Setup: Same as earlier but track that heuristic reduces search
     gworld_model initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
@@ -341,9 +317,8 @@ TEST(test_heuristic_provides_guidance)
 
     print_plan(result);
 
-    // With heuristic, should solve efficiently
     assert(result.success());
-    assert(result.nodes_expanded < 100); // Should be much less
+    assert(result.nodes_expanded < 100);
     std::cout << "  (Heuristic kept search focused)\n";
 }
 
@@ -356,8 +331,6 @@ int main()
     std::cout << "========================================\n";
     std::cout << "IDAGOAP Test Suite\n";
     std::cout << "========================================\n\n";
-
-    // Tests auto-run via static initialization
 
     std::cout << "\n========================================\n";
     std::cout << "Results: " << tests_passed << " passed, " << tests_failed << " failed\n";
