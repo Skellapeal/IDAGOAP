@@ -50,18 +50,21 @@ bool idaplanner::inverse_depth_first_search(
         if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
             elapsed > current_options.time_budget_ms)
         {
+            failure_reason = gplan_status::TimedOut;
             return false;
         }
     }
 
     if (depth > current_options.max_depth)
     {
+        failure_reason = gplan_status::DepthLimitReached;
         return false;
     }
 
     ++nodes_expanded;
     if (nodes_expanded > current_options.max_nodes)
     {
+        failure_reason = gplan_status::NodeLimitReached;
         return false;
     }
 
@@ -134,15 +137,18 @@ bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworl
     return true;
 }
 
-std::vector<const gaction*> idaplanner::plan(
-    const gworld_model& initial_state,
-    const gworld_model& goal_state,
-    const std::span<const gaction*> available_actions,
-    const gheuristic& heuristic,
-    const planner_options& options)
+gplan_result idaplanner::plan(
+    const gworld_model &initial_state,
+    const gworld_model &goal_state,
+    const std::span<const gaction *> available_actions,
+    const gheuristic &heuristic,
+    const planner_options &options)
 {
+    gplan_result result;
     current_options = options;
     nodes_expanded = 0;
+    failure_reason = gplan_status::Success;
+
     if (options.time_budget_ms >= 0)
     {
         start_time = std::chrono::steady_clock::now();
@@ -174,16 +180,38 @@ std::vector<const gaction*> idaplanner::plan(
                                        0,bound, next_bound, plan))
         {
             std::ranges::reverse(plan);
-            return plan;
+            result.actions = std::move(plan);
+            result.status = gplan_status::Success;
+
+            result.final_cost = 0;
+            for (const auto* action : result.actions)
+            {
+                result.final_cost += action->get_cost();
+            }
+            break;
+        }
+
+        if (failure_reason != gplan_status::Success)
+        {
+            result.status = failure_reason;
+            break;
         }
 
         if (next_bound == std::numeric_limits<int>::max())
         {
-            return {};
+            result.status = gplan_status::NoSolutionExists;
+            break;
         }
 
         bound = next_bound;
         current_goal = goal_state;
         plan.clear();
     }
+
+    result.nodes_expanded = nodes_expanded;
+
+    const auto planning_end = std::chrono::steady_clock::now();
+    result.planning_time_ms = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(planning_end - start_time).count());
+
+    return result;
 }

@@ -11,6 +11,7 @@
 #include "gaction.h"
 #include "gheuristic.h"
 #include "gtranpos_table.h"
+#include "gplan_result.h"
 
 struct planner_options
 {
@@ -27,6 +28,7 @@ class idaplanner
     int nodes_expanded = 0;
     planner_options current_options;
     std::chrono::steady_clock::time_point start_time;
+    gplan_status failure_reason = gplan_status::Success;
 
     bool inverse_depth_first_search(
         gworld_model &current_goal,
@@ -38,19 +40,18 @@ class idaplanner
         int depth = 0);
 
     [[nodiscard]] static bool is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start);
-
     [[nodiscard]] static bool is_action_relevant(const gaction* action, const gworld_model& current_goal);
     [[nodiscard]] static bool has_precondition_conflict(const gaction *action, const gworld_model &current_goal);
 
 public:
-    std::vector<const gaction*> plan(
+    gplan_result plan(
         const gworld_model &initial_state,
         const gworld_model &goal_state,
-        std::span<const gaction*> available_actions,
+        std::span<const gaction *> available_actions,
         const gheuristic &heuristic,
         const planner_options &options);
 
-    std::vector<const gaction*> plan(
+    gplan_result plan(
         const gworld_model &initial_state,
         const gworld_model &goal_state,
         std::span<const gaction*> available_actions,
