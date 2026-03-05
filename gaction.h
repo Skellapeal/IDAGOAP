@@ -8,7 +8,6 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include "gworld_model.h"
 #include "gtypes.h"
 
 class gworld_model;
@@ -19,7 +18,7 @@ protected:
     std::string name;
     int cost = 0.0f;
 
-    std::unordered_map<std::string, gvalue> preconditions;
+    std::unordered_map<std::string, gcondition> preconditions;
     std::unordered_map<std::string, gvalue> effects;
 
 public:
@@ -29,8 +28,13 @@ public:
 
     [[nodiscard]] const std::string& get_name() const { return name; }
     [[nodiscard]] int get_cost() const { return cost; }
-    [[nodiscard]] const std::unordered_map<std::string, gvalue>& get_preconditions() const { return preconditions; }
+    [[nodiscard]] const std::unordered_map<std::string, gcondition>& get_preconditions() const { return preconditions; }
     [[nodiscard]] const std::unordered_map<std::string, gvalue>& get_effects() const { return effects; }
+
+    void add_precondition(const std::string& key, const gvalue& value, const gcomparison comparison = gcomparison::Equal)
+    {
+        preconditions[key] = gcondition(key, value, comparison);
+    }
 
     /**
     * @brief Checks if this action is statically available.

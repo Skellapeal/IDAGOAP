@@ -16,13 +16,13 @@ bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &c
 
     const bool relevant = std::ranges::any_of(current_goal.get_states(),
         [&effects](const std::pair<const std::string, gvalue>& goal_entry)
-        {
-            const auto& [key, goal_value] = goal_entry;
-            const bool contains = effects.contains(key);
-            const bool matches = contains && effects.at(key) == goal_value;
+    {
+        const auto& [key, goal_value] = goal_entry;
+        const bool contains = effects.contains(key);
+        const bool matches = contains && effects.at(key) == goal_value;
 
-            return matches;
-        });
+        return matches;
+    });
 
     return relevant;
 }
@@ -33,21 +33,32 @@ bool idaplanner::has_precondition_conflict(const gaction *action, const gworld_m
     const auto& effects = action->get_effects();
 
     return std::ranges::any_of(action->get_preconditions(),
-        [&current_goal, &effects](const std::pair<const std::string, gvalue>& precondition_entry)
-    {
-        const auto& [precondition_key, precondition_value] = precondition_entry;
+        [&current_goal, &effects](const std::pair<const std::string, gcondition>& precondition_entry)
+        {
+            const auto& [precondition_key, precondition_condition] = precondition_entry;
 
-        if (effects.contains(precondition_key))
+            if (effects.contains(precondition_key)) return false;
+            if (precondition_condition.comparison != gcomparison::Equal) return false;
+
+            if (const auto existing_value = current_goal.get_state(precondition_key))
+            {
+                return *existing_value != precondition_condition.value;
+            }
+            return false;
+        }
+    );
+}
+
+bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start)
+{
+    for (const auto& [key, value] : regressed_goal.get_states())
+    {
+        if (auto start_value = start.get_state(key); !start_value || *start_value != value)
         {
             return false;
         }
-
-        if (const auto existing_value = current_goal.get_state(precondition_key))
-        {
-            return *existing_value != precondition_value;
-        }
-        return false;
-    });
+    }
+    return true;
 }
 
 bool idaplanner::inverse_depth_first_search(
@@ -115,9 +126,12 @@ bool idaplanner::inverse_depth_first_search(
         {
             current_goal.remove_state(key);
         }
-        for (const auto& [key, value] : action->get_preconditions())
+        for (const auto& [key, condition] : action->get_preconditions())
         {
-            current_goal.set_state(key, value);
+            if (condition.comparison == gcomparison::Equal)
+            {
+                current_goal.set_state(key, condition.value);
+            }
         }
 
         plan.push_back(action);
@@ -138,18 +152,6 @@ bool idaplanner::inverse_depth_first_search(
     }
 
     return false;
-}
-
-bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start)
-{
-    for (const auto& [key, value] : regressed_goal.get_states())
-    {
-        if (auto start_value = start.get_state(key); !start_value || *start_value != value)
-        {
-            return false;
-        }
-    }
-    return true;
 }
 
 gplan_result idaplanner::plan(

@@ -35,7 +35,7 @@ class craft_tool_action : public gaction
 public:
     craft_tool_action() : gaction("CraftTool", 5)
     {
-        preconditions["has_wood"] = gvalue{1};
+        add_precondition("has_wood", gvalue{1}, gcomparison::Equal);
 
         effects["has_tool"] = gvalue{1};
         effects["has_wood"] = gvalue{0};
@@ -72,8 +72,8 @@ class build_shelter_action : public gaction
 public:
     build_shelter_action() : gaction("BuildShelter", 20)
     {
-        preconditions["has_wood"] = gvalue{1};
-        preconditions["has_stone"] = gvalue{1};
+        add_precondition("has_wood", gvalue{1}, gcomparison::Equal);
+        add_precondition("has_stone", gvalue{1}, gcomparison::Equal);
 
         effects["has_shelter"] = gvalue{1};
         effects["has_wood"] = gvalue{0};
@@ -118,7 +118,7 @@ class hide_action : public gaction
 public:
     hide_action() : gaction("Hide", 3)
     {
-        preconditions["enemy_visible"] = gvalue{true};
+        add_precondition("enemy_visible", gvalue{true}, gcomparison::Equal);
 
         effects["is_hidden"] = gvalue{true};
         effects["enemy_visible"] = gvalue{false};
@@ -133,17 +133,8 @@ class rest_action : public gaction
 public:
     rest_action() : gaction("Rest", 12)
     {
-        gvalue health_precondition = 30.0f;
-        gvalue health_effect = 100.0f;
-
-        preconditions["health"] = gvalue{30.0f};
+        add_precondition("health", gvalue{30.0f}, gcomparison::LessOrEqual);
         effects["health"] = gvalue{100.0f};
-
-        // Debug: verify types
-        std::cout << "  [DEBUG] rest_action precondition type index: "
-                  << health_precondition.index() << " (0=int, 1=bool, 2=float)\n";
-        std::cout << "  [DEBUG] rest_action effect type index: "
-                  << health_effect.index() << "\n";
     }
 
     bool setup() override { return true; }
@@ -155,7 +146,7 @@ class take_damage_action : public gaction
 public:
     take_damage_action() : gaction("TakeDamage", 1)
     {
-        preconditions["health"] = gvalue{100.0f};
+        add_precondition("health", gvalue{100.0f}, gcomparison::Equal);
         effects["health"] = gvalue{30.0f};
     }
 
@@ -180,7 +171,7 @@ class deep_action_2 : public gaction
 public:
     deep_action_2() : gaction("DeepAction2", 1)
     {
-        preconditions["depth_1"] = gvalue{1};
+        add_precondition("depth_1", gvalue{1}, gcomparison::Equal);
         effects["depth_2"] = gvalue{1};
     }
 
@@ -193,7 +184,7 @@ class deep_action_3 : public gaction
 public:
     deep_action_3() : gaction("DeepAction3", 1)
     {
-        preconditions["depth_2"] = gvalue{1};
+        add_precondition("depth_2", gvalue{1}, gcomparison::Equal);
         effects["depth_3"] = gvalue{1};
     }
 
@@ -206,7 +197,7 @@ class deep_action_4 : public gaction
 public:
     deep_action_4() : gaction("DeepAction4", 1)
     {
-        preconditions["depth_3"] = gvalue{1};
+        add_precondition("depth_3", gvalue{1}, gcomparison::Equal);
         effects["depth_4"] = gvalue{1};
     }
 
@@ -219,7 +210,7 @@ class deep_action_5 : public gaction
 public:
     deep_action_5() : gaction("DeepAction5", 1)
     {
-        preconditions["depth_4"] = gvalue{1};
+        add_precondition("depth_4", gvalue{1}, gcomparison::Equal);
         effects["depth_5"] = gvalue{1};
     }
 
@@ -242,7 +233,7 @@ class cross_spike_trap_action : public gaction
 public:
     cross_spike_trap_action() : gaction("CrossSpikeTrap", 15)
     {
-        preconditions["at_entrance"] = gvalue{true};
+        add_precondition("at_entrance", gvalue{true}, gcomparison::Equal);
 
         effects["at_entrance"] = gvalue{false};
         effects["at_medpack_room"] = gvalue{true};
@@ -263,8 +254,8 @@ class pickup_medpack_action : public gaction
 public:
     pickup_medpack_action() : gaction("PickupMedpack", 3)
     {
-        preconditions["at_medpack_room"] = gvalue{true};
-        preconditions["has_medpack"] = gvalue{false};
+        add_precondition("at_medpack_room", gvalue{true},gcomparison::Equal);
+        add_precondition("has_medpack", gvalue{false},gcomparison::Equal);
 
         effects["has_medpack"] = gvalue{true};
     }
@@ -283,7 +274,7 @@ class use_medpack_action : public gaction
 public:
     use_medpack_action() : gaction("UseMedpack", 5)
     {
-        preconditions["has_medpack"] = gvalue{true};
+        add_precondition("has_medpack", gvalue{true},gcomparison::Equal);
 
         effects["health"] = gvalue{100.0f};
         effects["has_medpack"] = gvalue{false};
@@ -303,7 +294,7 @@ class retreat_to_entrance_action : public gaction
 public:
     retreat_to_entrance_action() : gaction("RetreatToEntrance", 20)
     {
-        preconditions["at_medpack_room"] = gvalue{true};
+        add_precondition("at_medpack_room", gvalue{true}, gcomparison::Equal);
 
         effects["at_entrance"] = gvalue{true};
         effects["at_medpack_room"] = gvalue{false};
@@ -323,7 +314,7 @@ class use_bandage_action : public gaction
 public:
     use_bandage_action() : gaction("UseBandage", 3)
     {
-        preconditions["has_bandage"] = gvalue{true};
+        add_precondition("has_bandage", gvalue{true}, gcomparison::Equal);
 
         effects["health"] = gvalue{50.0f};
         effects["has_bandage"] = gvalue{false};

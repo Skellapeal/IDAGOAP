@@ -637,8 +637,8 @@ TEST(test_precondition_conflict_detected)
     public:
         use_antidote_daytime_action() : gaction("UseAntidoteDaytime", 5)
         {
-            preconditions["has_antidote"] = gvalue{true};
-            preconditions["is_nighttime"] = gvalue{false};  // Requires daytime!
+            add_precondition("has_antidote", gvalue{true}, gcomparison::Equal);
+            add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
 
             effects["is_cured"] = gvalue{true};
             effects["has_antidote"] = gvalue{false};
@@ -652,7 +652,7 @@ TEST(test_precondition_conflict_detected)
     public:
         wait_for_day_action() : gaction("WaitForDay", 10)
         {
-            preconditions["is_nighttime"] = gvalue{true};
+            add_precondition("is_nighttime", gvalue{true}, gcomparison::Equal);
 
             effects["is_nighttime"] = gvalue{false};
         }
@@ -697,8 +697,8 @@ TEST(test_precondition_conflict_resolved)
     public:
         use_antidote_daytime_action() : gaction("UseAntidoteDaytime", 5)
         {
-            preconditions["has_antidote"] = gvalue{true};
-            preconditions["is_nighttime"] = gvalue{false};  // Requires daytime!
+            add_precondition("has_antidote", gvalue{true}, gcomparison::Equal);
+            add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
 
             effects["is_cured"] = gvalue{true};
             effects["has_antidote"] = gvalue{false};
@@ -712,7 +712,7 @@ TEST(test_precondition_conflict_resolved)
     public:
         wait_for_day_action() : gaction("WaitForDay", 10)
         {
-            preconditions["is_nighttime"] = gvalue{true};
+            add_precondition("is_nighttime", gvalue{true}, gcomparison::Equal);
 
             effects["is_nighttime"] = gvalue{false};
         }
@@ -725,7 +725,7 @@ TEST(test_precondition_conflict_resolved)
     public:
         wait_for_nighttime_action() : gaction("WaitForNighttime", 10)
         {
-            preconditions["is_nighttime"] = gvalue{false};
+            add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
 
             effects["is_nighttime"] = gvalue{true};
         }
