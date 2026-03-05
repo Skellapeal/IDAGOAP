@@ -621,6 +621,142 @@ TEST(test_complex_health_management_bandage_sufficient)
     assert(result.final_cost == 3);
 }
 
+TEST(test_precondition_conflict_detected)
+{
+    gworld_model initial;
+    initial.set_bool("is_poisoned", true);
+    initial.set_bool("is_nighttime", true);
+    initial.set_bool("has_antidote", true);
+
+    gworld_model goal;
+    goal.set_bool("is_cured", true);
+    goal.set_bool("is_nighttime", true);
+
+    class use_antidote_daytime_action : public gaction
+    {
+    public:
+        use_antidote_daytime_action() : gaction("UseAntidoteDaytime", 5)
+        {
+            preconditions["has_antidote"] = gvalue{true};
+            preconditions["is_nighttime"] = gvalue{false};  // Requires daytime!
+
+            effects["is_cured"] = gvalue{true};
+            effects["has_antidote"] = gvalue{false};
+        }
+        bool setup() override { return true; }
+        bool end() override { return true; }
+    };
+
+    class wait_for_day_action : public gaction
+    {
+    public:
+        wait_for_day_action() : gaction("WaitForDay", 10)
+        {
+            preconditions["is_nighttime"] = gvalue{true};
+
+            effects["is_nighttime"] = gvalue{false};
+        }
+        bool setup() override { return true; }
+        bool end() override { return true; }
+    };
+
+    use_antidote_daytime_action use_antidote;
+    wait_for_day_action wait_for_day;
+
+    std::vector<const gaction*> actions = { &use_antidote, &wait_for_day };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(!result.success());
+    assert(result.status == gplan_status::NoSolutionExists);
+
+    std::cout << "  Correctly detected precondition conflict:\n";
+    std::cout << "    - UseAntidote requires is_nighttime=false (daytime)\n";
+    std::cout << "    - But goal requires is_nighttime=true (nighttime)\n";
+    std::cout << "    - Action doesn't modify is_nighttime, so conflict is unresolvable\n";
+}
+
+TEST(test_precondition_conflict_resolved)
+{
+    gworld_model initial;
+    initial.set_bool("is_poisoned", true);
+    initial.set_bool("is_nighttime", true);
+    initial.set_bool("has_antidote", true);
+
+    gworld_model goal;
+    goal.set_bool("is_cured", true);
+    goal.set_bool("is_nighttime", true);
+
+    class use_antidote_daytime_action : public gaction
+    {
+    public:
+        use_antidote_daytime_action() : gaction("UseAntidoteDaytime", 5)
+        {
+            preconditions["has_antidote"] = gvalue{true};
+            preconditions["is_nighttime"] = gvalue{false};  // Requires daytime!
+
+            effects["is_cured"] = gvalue{true};
+            effects["has_antidote"] = gvalue{false};
+        }
+        bool setup() override { return true; }
+        bool end() override { return true; }
+    };
+
+    class wait_for_day_action : public gaction
+    {
+    public:
+        wait_for_day_action() : gaction("WaitForDay", 10)
+        {
+            preconditions["is_nighttime"] = gvalue{true};
+
+            effects["is_nighttime"] = gvalue{false};
+        }
+        bool setup() override { return true; }
+        bool end() override { return true; }
+    };
+
+    class wait_for_nighttime_action : public gaction
+    {
+    public:
+        wait_for_nighttime_action() : gaction("WaitForNighttime", 10)
+        {
+            preconditions["is_nighttime"] = gvalue{false};
+
+            effects["is_nighttime"] = gvalue{true};
+        }
+
+        bool setup() override {return true; }
+        bool end() override { return true; }
+    };
+
+    use_antidote_daytime_action use_antidote;
+    wait_for_day_action wait_for_day;
+    wait_for_nighttime_action wait_for_nighttime;
+
+    std::vector<const gaction*> actions = { &use_antidote, &wait_for_day, &wait_for_nighttime };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.status == gplan_status::Success);
+
+    std::cout << "  Adding new action correctly resolved existing conflict:\n";
+    std::cout << "    - UseAntidote requires is_nighttime=false (daytime)\n";
+    std::cout << "    - Goal requires is_nighttime=true (nighttime)\n";
+    std::cout << "    - New action requires daytime (is_nighttime=false)\n";
+    std::cout << "    - Action chain now modifies everything appropriately, no conflict.\n";
+}
+
 //
 // MAIN
 //
