@@ -16,6 +16,7 @@ add_library(IDAGOAP STATIC
         gplan_result.cpp
         tests/test_actions.h
         tests/test_planner.cpp
+        gtypes.cpp
 )
 
 target_include_directories(IDAGOAP PUBLIC
