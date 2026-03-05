@@ -322,6 +322,305 @@ TEST(test_heuristic_provides_guidance)
     std::cout << "  (Heuristic kept search focused)\n";
 }
 
+TEST(test_bool_preconditions_and_effects)
+{
+    gworld_model initial;
+    initial.set_bool("enemy_visible", false);
+    initial.set_bool("is_hidden", false);
+
+    gworld_model goal;
+    goal.set_bool("is_hidden", true);
+
+    scout_action scout;
+    hide_action hide;
+
+    std::vector<const gaction*> actions = { &scout, &hide };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.size() == 2);
+    assert(result.actions[0]->get_name() == "Scout");
+    assert(result.actions[1]->get_name() == "Hide");
+    assert(result.final_cost == 11); // 8 + 3
+
+    std::cout << "  (Boolean preconditions/effects working correctly)\n";
+}
+
+TEST(test_float_equality_in_variant)
+{
+    gvalue f1{30.0f};
+    gvalue f2{30.0f};
+    gvalue f3{30.1f};
+
+    assert(f1 == f2);
+    assert(f1 != f3);
+
+    gvalue f4{30.0f};
+    gvalue f5{30.0f + 1e-7f};
+
+    auto get_float = [](const gvalue& v) -> float
+    {
+        return std::get<float>(v);
+    };
+
+    constexpr float epsilon = 1e-6f;
+    assert(std::abs(get_float(f4) - get_float(f5)) <= epsilon);
+
+    std::unordered_map<std::string, gvalue> map1;
+    map1["health"] = gvalue{100.0f};
+
+    std::unordered_map<std::string, gvalue> map2;
+    map2["health"] = gvalue{100.0f};
+
+    assert(map1.at("health") == map2.at("health"));
+
+    std::unordered_map<std::string, gvalue> map3;
+    map3["health"] = gvalue{100.0f + 1e-7f};
+
+    assert(std::abs(get_float(map1.at("health")) - get_float(map3.at("health"))) <= epsilon);
+}
+
+TEST(test_is_action_relevant_debug)
+{
+    gworld_model goal;
+    goal.set_state("health", gvalue{100.0f});
+
+    const rest_action rest;
+
+    const auto& effects = rest.get_effects();
+    const auto& goal_states = goal.get_states();
+
+    assert(goal_states.contains("health"));
+    assert(effects.contains("health"));
+
+    const auto& effect_value = effects.at("health");
+    const auto& goal_value = goal_states.at("health");
+    assert(effect_value.index() == goal_value.index());
+
+    assert(effect_value == goal_value);
+}
+
+TEST(test_float_preconditions_and_effects)
+{
+    gworld_model initial;
+    initial.set_float("health", 30.0f);
+
+    gworld_model goal;
+    goal.set_float("health", 100.0f);
+
+    rest_action rest;
+
+    std::vector<const gaction*> actions = { &rest };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.size() == 1);
+    assert(result.actions[0]->get_name() == "Rest");
+    assert(result.final_cost == 12);
+
+    std::cout << "  (Float preconditions/effects working correctly)\n";
+}
+
+TEST(test_mixed_type_world_state)
+{
+    gworld_model initial;
+    initial.set_int("ammo_count", 30);
+    initial.set_bool("enemy_visible", false);
+    initial.set_float("health", 100.0f);
+
+    gworld_model goal;
+    goal.set_bool("enemy_visible", true);
+
+    scout_action scout;
+
+    std::vector<const gaction*> actions = { &scout };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.size() == 1);
+    assert(result.actions[0]->get_name() == "Scout");
+
+    std::cout << "  (Mixed int/bool/float state handled correctly)\n";
+}
+
+TEST(test_depth_limit_reached)
+{
+    gworld_model initial;
+
+    gworld_model goal;
+    goal.set_int("depth_5", 1);
+
+    deep_action_1 d1;
+    deep_action_2 d2;
+    deep_action_3 d3;
+    deep_action_4 d4;
+    deep_action_5 d5;
+
+    std::vector<const gaction*> actions = { &d1, &d2, &d3, &d4, &d5 };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result_unlimited = planner.plan(initial, goal, actions, heuristic);
+    print_plan(result_unlimited);
+
+    assert(result_unlimited.success());
+    assert(result_unlimited.size() == 5);
+    std::cout << "  (Unlimited depth: plan found with 5 steps)\n";
+
+    planner_options options;
+    options.max_depth = 3;
+
+    auto result_limited = planner.plan(initial, goal, actions, heuristic, options);
+    print_plan(result_limited);
+
+    assert(!result_limited.success());
+    assert(result_limited.status == gplan_status::DepthLimitReached);
+
+    std::cout << "  (Depth limit correctly enforced at depth 3)\n";
+}
+
+TEST(test_complex_health_management_spike_trap)
+{
+    gworld_model initial;
+    initial.set_float("health", 20.0f);
+    initial.set_bool("at_entrance", true);
+    initial.set_bool("at_medpack_room", false);
+    initial.set_bool("has_medpack", false);
+    initial.set_bool("has_bandage", false);
+
+    gworld_model goal;
+    goal.set_float("health", 100.0f);
+
+    cross_spike_trap_action cross_trap;
+    pickup_medpack_action pickup;
+    use_medpack_action use_medpack;
+    retreat_to_entrance_action retreat;
+    use_bandage_action use_bandage;
+
+    std::vector<const gaction*> actions =
+    {
+        &cross_trap,
+        &pickup,
+        &use_medpack,
+        &retreat,
+        &use_bandage
+    };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.size() == 3);
+
+    assert(result.actions[0]->get_name() == "CrossSpikeTrap");
+    assert(result.actions[1]->get_name() == "PickupMedpack");
+    assert(result.actions[2]->get_name() == "UseMedpack");
+
+    assert(result.final_cost == 23);
+}
+
+TEST(test_complex_health_management_with_alternative)
+{
+    gworld_model initial;
+    initial.set_float("health", 20.0f);
+    initial.set_bool("at_entrance", true);
+    initial.set_bool("at_medpack_room", false);
+    initial.set_bool("has_medpack", false);
+    initial.set_bool("has_bandage", true);
+
+    gworld_model goal;
+    goal.set_float("health", 100.0f);
+
+    cross_spike_trap_action cross_trap;
+    pickup_medpack_action pickup;
+    use_medpack_action use_medpack;
+    use_bandage_action use_bandage;
+
+    std::vector<const gaction*> actions =
+    {
+        &cross_trap,
+        &pickup,
+        &use_medpack,
+        &use_bandage
+    };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.size() == 3);
+
+    assert(result.actions[0]->get_name() == "CrossSpikeTrap");
+    assert(result.actions[1]->get_name() == "PickupMedpack");
+    assert(result.actions[2]->get_name() == "UseMedpack");
+}
+
+TEST(test_complex_health_management_bandage_sufficient)
+{
+    gworld_model initial;
+    initial.set_float("health", 20.0f);
+    initial.set_bool("at_entrance", true);
+    initial.set_bool("at_medpack_room", false);
+    initial.set_bool("has_medpack", false);
+    initial.set_bool("has_bandage", true);
+
+    gworld_model goal;
+    goal.set_float("health", 50.0f);
+
+    cross_spike_trap_action cross_trap;
+    pickup_medpack_action pickup;
+    use_medpack_action use_medpack;
+    use_bandage_action use_bandage;
+
+    std::vector<const gaction*> actions =
+    {
+        &cross_trap,
+        &pickup,
+        &use_medpack,
+        &use_bandage
+    };
+
+    gheuristic heuristic;
+    idaplanner planner;
+
+    auto result = planner.plan(initial, goal, actions, heuristic);
+
+    print_plan(result);
+
+    assert(result.success());
+    assert(result.size() == 1);
+
+    assert(result.actions[0]->get_name() == "UseBandage");
+    assert(result.final_cost == 3);
+}
+
 //
 // MAIN
 //

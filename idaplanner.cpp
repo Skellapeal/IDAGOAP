@@ -5,6 +5,7 @@
 #include "idaplanner.h"
 #include "gtypes.h"
 #include <algorithm>
+#include <iostream>
 #include <ranges>
 #include <vector>
 #include <limits>
@@ -13,26 +14,40 @@ bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &c
 {
     const auto& effects = action->get_effects();
 
-    return std::ranges::any_of(current_goal.get_states(),
+    const bool relevant = std::ranges::any_of(current_goal.get_states(),
         [&effects](const std::pair<const std::string, gvalue>& goal_entry)
         {
             const auto& [key, goal_value] = goal_entry;
-            return effects.contains(key) && effects.at(key) == goal_value;
+            const bool contains = effects.contains(key);
+            const bool matches = contains && effects.at(key) == goal_value;
+
+            return matches;
         });
+
+    return relevant;
 }
+
 
 bool idaplanner::has_precondition_conflict(const gaction *action, const gworld_model &current_goal)
 {
+    const auto& effects = action->get_effects();
+
     return std::ranges::any_of(action->get_preconditions(),
-        [&current_goal](const std::pair<const std::string, gvalue>& precondition_entry)
+        [&current_goal, &effects](const std::pair<const std::string, gvalue>& precondition_entry)
+    {
+        const auto& [precondition_key, precondition_value] = precondition_entry;
+
+        if (effects.contains(precondition_key))
         {
-            const auto& [precondition_key, precondition_value] = precondition_entry;
-            if (const auto existing_value = current_goal.get_state(precondition_key))
-            {
-                return *existing_value != precondition_value;
-            }
             return false;
-        });
+        }
+
+        if (const auto existing_value = current_goal.get_state(precondition_key))
+        {
+            return *existing_value != precondition_value;
+        }
+        return false;
+    });
 }
 
 bool idaplanner::inverse_depth_first_search(
@@ -148,11 +163,7 @@ gplan_result idaplanner::plan(
     current_options = options;
     nodes_expanded = 0;
     failure_reason = gplan_status::Success;
-
-    if (options.time_budget_ms >= 0)
-    {
-        start_time = std::chrono::steady_clock::now();
-    }
+    start_time = std::chrono::steady_clock::now();
 
     std::vector<const gaction*> usable_actions;
     for (const auto* action : available_actions)
@@ -163,7 +174,11 @@ gplan_result idaplanner::plan(
         }
     }
 
-    if (usable_actions.empty()) return {};
+    if (usable_actions.empty())
+    {
+        result.status = gplan_status::NoSolutionExists;
+        return result;
+    }
 
     gworld_model current_goal = goal_state;
     int bound = heuristic.estimate(initial_state, goal_state);
