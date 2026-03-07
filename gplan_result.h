@@ -21,7 +21,7 @@ enum class gplan_status
 
 struct gplan_result
 {
-    std::vector<std::shared_ptr<const gaction>> actions;
+    std::vector<std::shared_ptr<gaction>> actions;
     gplan_status status = gplan_status::Success;
 
     int nodes_expanded = 0;
