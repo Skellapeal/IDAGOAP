@@ -122,15 +122,26 @@ bool idaplanner::inverse_depth_first_search(
         if (has_precondition_conflict(action, current_goal)) continue;
 
         const gworld_model previous_goal = current_goal;
+
+        // Remove effects from the goal to allow for regression
         for (const auto &key: action->get_effects() | std::views::keys)
         {
             current_goal.remove_state(key);
         }
+
+        // Add new preconditions to goal
         for (const auto& [key, condition] : action->get_preconditions())
         {
             if (condition.comparison == gcomparison::Equal)
             {
                 current_goal.set_state(key, condition.value);
+            }
+            else
+            {
+                if (!condition.evaluate(initial_state))
+                {
+                    current_goal = previous_goal;
+                }
             }
         }
 
