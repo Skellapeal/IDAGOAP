@@ -6,13 +6,13 @@
 #define IDAGOAP_GPLAN_RESULT_H
 #include <string>
 #include <vector>
-
+#include <memory>
 
 class gaction;
 
 enum class gplan_status
 {
-    Success,                    // Found and build a plan
+    Success,                    // Found and built a plan
     NoSolutionExists,           // No action sequence satisfies the goal
     TimedOut,                   // Time budget elapsed
     DepthLimitReached,          // Hit max depth
@@ -21,10 +21,9 @@ enum class gplan_status
 
 struct gplan_result
 {
-    std::vector<const gaction*> actions;
+    std::vector<std::shared_ptr<const gaction>> actions;
     gplan_status status = gplan_status::Success;
 
-    // Debug
     int nodes_expanded = 0;
     int final_cost = 0;
     int planning_time_ms = 0;

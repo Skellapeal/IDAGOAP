@@ -5,30 +5,19 @@
 #include "gtypes.h"
 #include "gworld_model.h"
 
-bool gcondition::evaluate(const gworld_model &world_model) const
+bool gcondition::evaluate(const gworld_model& world_model) const
 {
-    const auto current = world_model.get_state(key);
+    const auto world_value = world_model.get_state(key);
+    if (!world_value) return false;
 
-    if (!current) return false;
-    if (current->index() != value.index()) return false;
-
-    if (const auto* this_int = std::get_if<int>(&*current))
+    return std::visit([this, &world_value]<typename T0>(const T0& cond_value) -> bool
     {
-        const auto* other_int = std::get_if<int>(&value);
-        return compare(*this_int, *other_int);
-    }
+        using T = std::decay_t<T0>;
 
-    if (const auto* this_float = std::get_if<float>(&*current))
-    {
-        const auto* other_float = std::get_if<float>(&value);
-        return compare(*this_float, *other_float);
-    }
-
-    if (const auto* this_bool = std::get_if<bool>(&*current))
-    {
-        const auto* other_bool = std::get_if<bool>(&value);
-        return compare(*this_bool, *other_bool);
-    }
-
-    return false;
+        if (const auto* world_val = std::get_if<T>(&*world_value))
+        {
+            return compare(*world_val, cond_value);
+        }
+        return false;
+    }, value);
 }

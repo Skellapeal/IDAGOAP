@@ -31,6 +31,12 @@ public:
     void set_float(const std::string& key, float value) { set_state(key, gvalue{value}); }
     [[nodiscard]]std::optional<float> get_float(const std::string &key) const;
 
+    void set_string(const std::string& key, std::string value) { set_state(key, gvalue{ std::move(value) }); }
+    [[nodiscard]] std::optional<std::string> get_string(const std::string& key) const;
+
+    void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, gvalue{std::vector{x, y, z}}); }
+    [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
+
     [[nodiscard]] bool operator==(const gworld_model &other) const;
 };
 

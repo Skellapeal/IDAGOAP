@@ -5,6 +5,7 @@
 #ifndef IDAGOAP_GACTION_H
 #define IDAGOAP_GACTION_H
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -12,7 +13,7 @@
 
 class gworld_model;
 
-class gaction
+class gaction : public std::enable_shared_from_this<gaction>
 {
 protected:
     std::string name;
@@ -22,6 +23,9 @@ protected:
     std::unordered_map<std::string, gvalue> effects;
 
 public:
+    using ptr = std::shared_ptr<gaction>;
+    using const_ptr = std::shared_ptr<const gaction>;
+
     gaction(std::string name, const int cost) : name(std::move(name)), cost(cost) {}
 
     virtual ~gaction() = default;
@@ -34,6 +38,11 @@ public:
     void add_precondition(const std::string& key, const gvalue& value, const gcomparison comparison = gcomparison::Equal)
     {
         preconditions[key] = gcondition(key, value, comparison);
+    }
+
+    void add_effect(const std::string& key, const gvalue& value)
+    {
+        effects[key] = value;
     }
 
     /**
@@ -53,11 +62,13 @@ public:
      */
     [[nodiscard]] virtual bool can_run() const { return true; }
 
-    bool check_preconditions(const gworld_model* world_model) const;
-    void apply_effects(gworld_model* world_model) const;
+    bool check_preconditions(const gworld_model& world_model) const;
+    void apply_effects(gworld_model& world_model) const;
 
-    virtual bool setup() = 0;
-    virtual bool end() = 0;
+    virtual bool on_start() { return true; }
+    virtual void on_tick(float delta_time) {}
+    virtual void on_end(bool success) {}
+    virtual void on_interrupt() {}
 };
 
 #endif //IDAGOAP_GACTION_H

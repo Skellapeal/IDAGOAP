@@ -10,7 +10,7 @@
 #include <vector>
 #include <limits>
 
-bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &current_goal)
+bool idaplanner::is_action_relevant(const gaction::const_ptr& action, const gworld_model &current_goal)
 {
     const auto& effects = action->get_effects();
 
@@ -28,7 +28,7 @@ bool idaplanner::is_action_relevant(const gaction *action, const gworld_model &c
 }
 
 
-bool idaplanner::has_precondition_conflict(const gaction *action, const gworld_model &current_goal)
+bool idaplanner::has_precondition_conflict(const gaction::const_ptr& action, const gworld_model &current_goal)
 {
     const auto& effects = action->get_effects();
 
@@ -64,10 +64,10 @@ bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworl
 bool idaplanner::inverse_depth_first_search(
     gworld_model& current_goal,
     const gworld_model& initial_state,
-    const std::span<const gaction*> available_actions,
-    const gheuristic& heuristic,
+    const std::span<const gaction::const_ptr> available_actions,
+    const gheuristic &heuristic,
     const int accumulated_cost, const int cost_limit, int& next_cost_limit,
-    std::vector<const gaction*>& plan,
+    std::vector<const gaction::const_ptr>& plan,
     const int depth)
 {
     if (current_options.time_budget_ms >= 0)
@@ -116,7 +116,7 @@ bool idaplanner::inverse_depth_first_search(
 
     if (is_goal_reached(current_goal, initial_state)) return true;
 
-    for (const gaction* action : available_actions)
+    for (const auto& action : available_actions)
     {
         if (!is_action_relevant(action, current_goal)) continue;
         if (has_precondition_conflict(action, current_goal)) continue;
@@ -157,7 +157,7 @@ bool idaplanner::inverse_depth_first_search(
 gplan_result idaplanner::plan(
     const gworld_model &initial_state,
     const gworld_model &goal_state,
-    const std::span<const gaction *> available_actions,
+    const std::span<const gaction::const_ptr> available_actions,
     const gheuristic &heuristic,
     const planner_options &options)
 {
@@ -167,8 +167,8 @@ gplan_result idaplanner::plan(
     failure_reason = gplan_status::Success;
     start_time = std::chrono::steady_clock::now();
 
-    std::vector<const gaction*> usable_actions;
-    for (const auto* action : available_actions)
+    std::vector<const gaction::const_ptr> usable_actions;
+    for (const auto& action : available_actions)
     {
         if (action -> can_run())
         {
@@ -201,7 +201,7 @@ gplan_result idaplanner::plan(
             result.status = gplan_status::Success;
 
             result.final_cost = 0;
-            for (const auto* action : result.actions)
+            for (const auto& action : result.actions)
             {
                 result.final_cost += action->get_cost();
             }

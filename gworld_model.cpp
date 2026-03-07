@@ -4,15 +4,8 @@
 
 #include "gworld_model.h"
 
-bool gworld_model::operator==(const gworld_model& other) const
-{
-    return states == other.states;
-}
-
-void gworld_model::set_state(const std::string &key, const gvalue value)
-{
-    states[key] = value;
-}
+bool gworld_model::operator==(const gworld_model& other) const { return states == other.states; }
+void gworld_model::set_state(const std::string &key, gvalue value) { states[key] = std::move(value); }
 
 std::optional<gvalue> gworld_model::get_state(const std::string &key) const
 {
@@ -23,58 +16,66 @@ std::optional<gvalue> gworld_model::get_state(const std::string &key) const
     return std::nullopt;
 }
 
+bool gworld_model::has_state(const std::string& key) const { return states.contains(key); }
+void gworld_model::remove_state(const std::string &key) { states.erase(key); }
+const std::unordered_map<std::string, gvalue> & gworld_model::get_states() const { return states; }
+
 std::optional<int> gworld_model::get_int(const std::string &key) const
 {
-    const auto it = states.find(key);
-    if (it == states.end()) return std::nullopt;
-
-    if (const auto pval = std::get_if<int>(&it->second)) return *pval;
+    if (const auto value = get_state(key))
+    {
+        if (const auto* int_value = std::get_if<int>(&*value))
+        {
+            return *int_value;
+        }
+    }
     return std::nullopt;
 }
 
 std::optional<bool> gworld_model::get_bool(const std::string &key) const
 {
-    const auto it = states.find(key);
-    if (it == states.end()) return std::nullopt;
-
-    if (const auto pval = std::get_if<bool>(&it->second)) return *pval;
+    if (const auto value = get_state(key))
+    {
+        if (const auto* bool_val = std::get_if<bool>(&*value))
+        {
+            return *bool_val;
+        }
+    }
     return std::nullopt;
 }
 
 std::optional<float> gworld_model::get_float(const std::string &key) const
 {
-    const auto it = states.find(key);
-    if (it == states.end()) return std::nullopt;
-
-    if (const auto pval = std::get_if<float>(&it->second)) return *pval;
+    if (const auto value = get_state(key))
+    {
+        if (const auto* float_val = std::get_if<float>(&*value))
+        {
+            return *float_val;
+        }
+    }
     return std::nullopt;
 }
 
-bool gworld_model::has_state(const std::string &key) const
+std::optional<std::string> gworld_model::get_string(const std::string& key) const
 {
-    return states.contains(key);
-}
-
-void gworld_model::remove_state(const std::string &key)
-{
-    states.erase(key);
-}
-
-const std::unordered_map<std::string, gvalue> & gworld_model::get_states() const
-{
-    return states;
-}
-
-inline std::size_t hash_gvalue(const gvalue& v)
-{
-    std::size_t seed = std::hash<std::size_t>{}(v.index());
-
-    std::visit([&]<typename T0>(const T0& value)
+    if (const auto value = get_state(key))
     {
-        using T = std::decay_t<T0>;
-        const std::size_t value_hash = std::hash<T>{}(value);
-        seed ^= value_hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }, v);
+        if (const auto* str_val = std::get_if<std::string>(&*value))
+        {
+            return *str_val;
+        }
+    }
+    return std::nullopt;
+}
 
-    return seed;
+std::optional<std::vector<float>> gworld_model::get_position(const std::string& key) const
+{
+    if (const auto value = get_state(key))
+    {
+        if (const auto* vec_val = std::get_if<std::vector<float>>(&*value))
+        {
+            return *vec_val;
+        }
+    }
+    return std::nullopt;
 }
