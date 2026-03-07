@@ -19,6 +19,8 @@ add_library(IDAGOAP STATIC
         gtypes.cpp
         gplan_executor.cpp
         gplan_executor.h
+        goal_selector.cpp
+        goal_selector.h
 )
 
 target_include_directories(IDAGOAP PUBLIC
