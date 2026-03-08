@@ -10,6 +10,8 @@
 class gheuristic
 {
 public:
+    virtual ~gheuristic() = default;
+
     virtual int estimate(const gworld_model& world_model, const gworld_model& goal) const;
 };
 

@@ -11,7 +11,6 @@ add_library(IDAGOAP STATIC
         gaction.cpp
         gworld_model.cpp
         gmotive.cpp
-        gheuristic.cpp
         gtranpos_table.cpp
         gplan_result.cpp
         tests/test_actions.h
@@ -21,6 +20,9 @@ add_library(IDAGOAP STATIC
         gplan_executor.h
         goal_selector.cpp
         goal_selector.h
+        gasync_planner.cpp
+        gasync_planner.h
+        gheuristic_library.h
 )
 
 target_include_directories(IDAGOAP PUBLIC
