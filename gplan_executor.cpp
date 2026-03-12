@@ -46,7 +46,7 @@ execution_result gplan_executor::tick(const float delta_time)
 
     if (!current_action)
     {
-        current_action = current_plan.actions[current_action_index];
+        current_action = std::const_pointer_cast<gaction>(current_plan.actions[current_action_index]);
         action_started = false;
     }
 
@@ -85,6 +85,7 @@ execution_result gplan_executor::tick(const float delta_time)
     current_action_index++;
 
     result.current_action_index = current_action_index;
+    result.status = status;
     return result;
 }
 

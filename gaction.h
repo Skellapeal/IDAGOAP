@@ -13,6 +13,13 @@
 
 class gworld_model;
 
+enum class action_status
+{
+    Running,
+    Succeeded,
+    Failed
+};
+
 class gaction : public std::enable_shared_from_this<gaction>
 {
 protected:
@@ -66,7 +73,7 @@ public:
     void apply_effects(gworld_model& world_model) const;
 
     virtual bool on_start() { return true; }
-    virtual void on_tick(float delta_time) {}
+    virtual action_status on_tick(float delta_time) { return action_status::Succeeded; }
     virtual void on_end(bool success) {}
     virtual void on_interrupt() {}
 };

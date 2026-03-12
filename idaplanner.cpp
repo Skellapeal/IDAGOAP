@@ -64,10 +64,10 @@ bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworl
 bool idaplanner::inverse_depth_first_search(
     gworld_model& current_goal,
     const gworld_model& initial_state,
-    const std::span<const gaction::const_ptr> available_actions,
+    const std::span<gaction::const_ptr> available_actions,
     const gheuristic &heuristic,
     const int accumulated_cost, const int cost_limit, int& next_cost_limit,
-    std::vector<const gaction::const_ptr>& plan,
+    std::vector<gaction::const_ptr>& plan,
     const int depth)
 {
     if (current_options.time_budget_ms >= 0)
@@ -168,7 +168,7 @@ bool idaplanner::inverse_depth_first_search(
 gplan_result idaplanner::plan(
     const gworld_model &initial_state,
     const gworld_model &goal_state,
-    const std::span<const gaction::const_ptr> available_actions,
+    const std::span<gaction::const_ptr> available_actions,
     const gheuristic &heuristic,
     const planner_options &options)
 {
@@ -178,7 +178,7 @@ gplan_result idaplanner::plan(
     failure_reason = gplan_status::Success;
     start_time = std::chrono::steady_clock::now();
 
-    std::vector<const gaction::const_ptr> usable_actions;
+    std::vector<gaction::const_ptr> usable_actions;
     for (const auto& action : available_actions)
     {
         if (action -> can_run())
@@ -195,7 +195,7 @@ gplan_result idaplanner::plan(
 
     gworld_model current_goal = goal_state;
     int bound = heuristic.estimate(initial_state, goal_state);
-    std::vector<const gaction*> plan;
+    std::vector<gaction::const_ptr> plan;
 
     table.set_max_size(current_options.max_transposition_size);
 

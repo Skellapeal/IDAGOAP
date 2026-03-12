@@ -68,8 +68,7 @@ TEST(test_simple_single_action_plan)
     gworld_model goal;
     goal.set_int("has_wood", 1);
 
-    gather_wood_action gather_wood;
-    std::vector<const gaction*> actions = { &gather_wood };
+    std::vector<gaction::const_ptr> actions = { std::make_shared<gather_wood_action>() };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -94,9 +93,11 @@ TEST(test_two_step_plan)
     gworld_model goal;
     goal.set_int("has_tool", 1);
 
-    gather_wood_action gather_wood;
-    craft_tool_action craft_tool;
-    std::vector<const gaction*> actions = { &gather_wood, &craft_tool };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<gather_wood_action>(),
+        std::make_shared<craft_tool_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -122,14 +123,11 @@ TEST(test_complex_multi_resource_plan)
     gworld_model goal;
     goal.set_int("has_shelter", 1);
 
-    gather_wood_action gather_wood;
-    gather_stone_action gather_stone;
-    build_shelter_action build_shelter;
-
-    std::vector<const gaction*> actions = {
-        &gather_wood,
-        &gather_stone,
-        &build_shelter
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<gather_wood_action>(),
+        std::make_shared<gather_stone_action>(),
+        std::make_shared<build_shelter_action>()
     };
 
     gheuristic heuristic;
@@ -154,8 +152,7 @@ TEST(test_no_solution_exists)
     gworld_model goal;
     goal.set_int("has_tool", 1);
 
-    craft_tool_action craft_tool;
-    std::vector<const gaction*> actions = { &craft_tool };
+    std::vector<gaction::const_ptr> actions = { std::make_shared<craft_tool_action>() };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -177,8 +174,7 @@ TEST(test_already_at_goal)
     gworld_model goal;
     goal.set_int("has_wood", 1);
 
-    gather_wood_action gather_wood;
-    std::vector<const gaction*> actions = { &gather_wood };
+    std::vector<gaction::const_ptr> actions = { std::make_shared<gather_wood_action>() };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -200,10 +196,11 @@ TEST(test_disabled_action_filtered)
     gworld_model goal;
     goal.set_int("has_wood", 1);
 
-    gather_wood_action gather_wood;
-    disabled_action disabled;
-
-    std::vector<const gaction*> actions = { &gather_wood, &disabled };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<gather_wood_action>(),
+        std::make_shared<disabled_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -227,13 +224,12 @@ TEST(test_node_limit_reached)
     gworld_model goal;
     goal.set_int("has_shelter", 1);
 
-    gather_wood_action gather_wood;
-    gather_stone_action gather_stone;
-    build_shelter_action build_shelter;
-    craft_tool_action craft_tool;
-
-    std::vector<const gaction*> actions = {
-        &gather_wood, &gather_stone, &build_shelter, &craft_tool
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<gather_wood_action>(),
+        std::make_shared<gather_stone_action>(),
+        std::make_shared<build_shelter_action>(),
+        std::make_shared<craft_tool_action>()
     };
 
     gheuristic heuristic;
@@ -261,12 +257,11 @@ TEST(test_time_budget_enforced)
     gworld_model goal;
     goal.set_int("has_shelter", 1);
 
-    gather_wood_action gather_wood;
-    gather_stone_action gather_stone;
-    build_shelter_action build_shelter;
-
-    std::vector<const gaction*> actions = {
-        &gather_wood, &gather_stone, &build_shelter
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<gather_wood_action>(),
+        std::make_shared<gather_stone_action>(),
+        std::make_shared<build_shelter_action>()
     };
 
     gheuristic heuristic;
@@ -302,12 +297,11 @@ TEST(test_heuristic_provides_guidance)
     gworld_model goal;
     goal.set_int("has_shelter", 1);
 
-    gather_wood_action gather_wood;
-    gather_stone_action gather_stone;
-    build_shelter_action build_shelter;
-
-    std::vector<const gaction*> actions = {
-        &gather_wood, &gather_stone, &build_shelter
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<gather_wood_action>(),
+        std::make_shared<gather_stone_action>(),
+        std::make_shared<build_shelter_action>()
     };
 
     gheuristic heuristic;
@@ -331,10 +325,11 @@ TEST(test_bool_preconditions_and_effects)
     gworld_model goal;
     goal.set_bool("is_hidden", true);
 
-    scout_action scout;
-    hide_action hide;
-
-    std::vector<const gaction*> actions = { &scout, &hide };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<scout_action>(),
+        std::make_shared<hide_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -391,9 +386,9 @@ TEST(test_is_action_relevant_debug)
     gworld_model goal;
     goal.set_state("health", gvalue{100.0f});
 
-    const rest_action rest;
+    const auto rest = std::make_shared<const rest_action>();
 
-    const auto& effects = rest.get_effects();
+    const auto& effects = rest->get_effects();
     const auto& goal_states = goal.get_states();
 
     assert(goal_states.contains("health"));
@@ -414,9 +409,10 @@ TEST(test_float_preconditions_and_effects)
     gworld_model goal;
     goal.set_float("health", 100.0f);
 
-    rest_action rest;
-
-    std::vector<const gaction*> actions = { &rest };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<rest_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -443,9 +439,10 @@ TEST(test_mixed_type_world_state)
     gworld_model goal;
     goal.set_bool("enemy_visible", true);
 
-    scout_action scout;
-
-    std::vector<const gaction*> actions = { &scout };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<scout_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -468,13 +465,14 @@ TEST(test_depth_limit_reached)
     gworld_model goal;
     goal.set_int("depth_5", 1);
 
-    deep_action_1 d1;
-    deep_action_2 d2;
-    deep_action_3 d3;
-    deep_action_4 d4;
-    deep_action_5 d5;
-
-    std::vector<const gaction*> actions = { &d1, &d2, &d3, &d4, &d5 };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<deep_action_1>(),
+        std::make_shared<deep_action_2>(),
+        std::make_shared<deep_action_3>(),
+        std::make_shared<deep_action_4>(),
+        std::make_shared<deep_action_5>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -510,19 +508,13 @@ TEST(test_complex_health_management_spike_trap)
     gworld_model goal;
     goal.set_float("health", 100.0f);
 
-    cross_spike_trap_action cross_trap;
-    pickup_medpack_action pickup;
-    use_medpack_action use_medpack;
-    retreat_to_entrance_action retreat;
-    use_bandage_action use_bandage;
-
-    std::vector<const gaction*> actions =
+    std::vector<gaction::const_ptr> actions =
     {
-        &cross_trap,
-        &pickup,
-        &use_medpack,
-        &retreat,
-        &use_bandage
+        std::make_shared<cross_spike_trap_action>(),
+        std::make_shared<pickup_medpack_action>(),
+        std::make_shared<use_medpack_action>(),
+        std::make_shared<retreat_to_entrance_action>(),
+        std::make_shared<use_bandage_action>()
     };
 
     gheuristic heuristic;
@@ -554,17 +546,12 @@ TEST(test_complex_health_management_with_alternative)
     gworld_model goal;
     goal.set_float("health", 100.0f);
 
-    cross_spike_trap_action cross_trap;
-    pickup_medpack_action pickup;
-    use_medpack_action use_medpack;
-    use_bandage_action use_bandage;
-
-    std::vector<const gaction*> actions =
+    std::vector<gaction::const_ptr> actions =
     {
-        &cross_trap,
-        &pickup,
-        &use_medpack,
-        &use_bandage
+        std::make_shared<cross_spike_trap_action>(),
+        std::make_shared<pickup_medpack_action>(),
+        std::make_shared<use_medpack_action>(),
+        std::make_shared<use_bandage_action>()
     };
 
     gheuristic heuristic;
@@ -594,17 +581,12 @@ TEST(test_complex_health_management_bandage_sufficient)
     gworld_model goal;
     goal.set_float("health", 50.0f);
 
-    cross_spike_trap_action cross_trap;
-    pickup_medpack_action pickup;
-    use_medpack_action use_medpack;
-    use_bandage_action use_bandage;
-
-    std::vector<const gaction*> actions =
+    std::vector<gaction::const_ptr> actions =
     {
-        &cross_trap,
-        &pickup,
-        &use_medpack,
-        &use_bandage
+        std::make_shared<cross_spike_trap_action>(),
+        std::make_shared<pickup_medpack_action>(),
+        std::make_shared<use_medpack_action>(),
+        std::make_shared<use_bandage_action>()
     };
 
     gheuristic heuristic;
@@ -643,8 +625,8 @@ TEST(test_precondition_conflict_detected)
             effects["is_cured"] = gvalue{true};
             effects["has_antidote"] = gvalue{false};
         }
-        bool setup() override { return true; }
-        bool end() override { return true; }
+        bool on_start() override { return true; }
+        void on_end(bool) override {}
     };
 
     class wait_for_day_action : public gaction
@@ -656,14 +638,15 @@ TEST(test_precondition_conflict_detected)
 
             effects["is_nighttime"] = gvalue{false};
         }
-        bool setup() override { return true; }
-        bool end() override { return true; }
+        bool on_start() override { return true; }
+        void on_end(bool) override {}
     };
 
-    use_antidote_daytime_action use_antidote;
-    wait_for_day_action wait_for_day;
-
-    std::vector<const gaction*> actions = { &use_antidote, &wait_for_day };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<use_antidote_daytime_action>(),
+        std::make_shared<wait_for_day_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;
@@ -703,8 +686,8 @@ TEST(test_precondition_conflict_resolved)
             effects["is_cured"] = gvalue{true};
             effects["has_antidote"] = gvalue{false};
         }
-        bool setup() override { return true; }
-        bool end() override { return true; }
+        bool on_start() override { return true; }
+        void on_end(bool) override { }
     };
 
     class wait_for_day_action : public gaction
@@ -716,8 +699,8 @@ TEST(test_precondition_conflict_resolved)
 
             effects["is_nighttime"] = gvalue{false};
         }
-        bool setup() override { return true; }
-        bool end() override { return true; }
+        bool on_start() override { return true; }
+        void on_end(bool) override { }
     };
 
     class wait_for_nighttime_action : public gaction
@@ -730,15 +713,16 @@ TEST(test_precondition_conflict_resolved)
             effects["is_nighttime"] = gvalue{true};
         }
 
-        bool setup() override {return true; }
-        bool end() override { return true; }
+        bool on_start() override { return true; }
+        void on_end(bool) override { }
     };
 
-    use_antidote_daytime_action use_antidote;
-    wait_for_day_action wait_for_day;
-    wait_for_nighttime_action wait_for_nighttime;
-
-    std::vector<const gaction*> actions = { &use_antidote, &wait_for_day, &wait_for_nighttime };
+    std::vector<gaction::const_ptr> actions =
+    {
+        std::make_shared<use_antidote_daytime_action>(),
+        std::make_shared<wait_for_day_action>(),
+        std::make_shared<wait_for_nighttime_action>()
+    };
 
     gheuristic heuristic;
     idaplanner planner;

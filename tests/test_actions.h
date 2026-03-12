@@ -21,8 +21,8 @@ public:
         effects["has_wood"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -41,8 +41,8 @@ public:
         effects["has_wood"] = gvalue{0};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -58,8 +58,8 @@ public:
         effects["has_stone"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -80,8 +80,8 @@ public:
         effects["has_stone"] = gvalue{0};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -97,8 +97,8 @@ public:
     }
 
     bool can_run() const override { return false; }
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class scout_action : public gaction
@@ -109,8 +109,8 @@ public:
         effects["enemy_visible"] = gvalue{true};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class hide_action : public gaction
@@ -124,8 +124,8 @@ public:
         effects["enemy_visible"] = gvalue{false};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class rest_action : public gaction
@@ -137,8 +137,8 @@ public:
         effects["health"] = gvalue{100.0f};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class take_damage_action : public gaction
@@ -150,8 +150,8 @@ public:
         effects["health"] = gvalue{30.0f};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class deep_action_1 : public gaction
@@ -162,8 +162,8 @@ public:
         effects["depth_1"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class deep_action_2 : public gaction
@@ -175,8 +175,8 @@ public:
         effects["depth_2"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class deep_action_3 : public gaction
@@ -188,8 +188,8 @@ public:
         effects["depth_3"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class deep_action_4 : public gaction
@@ -201,8 +201,8 @@ public:
         effects["depth_4"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 class deep_action_5 : public gaction
@@ -214,8 +214,8 @@ public:
         effects["depth_5"] = gvalue{1};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -240,8 +240,8 @@ public:
         effects["health"] = gvalue{10.0f};  // Absolute value after taking damage
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -260,8 +260,8 @@ public:
         effects["has_medpack"] = gvalue{true};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -280,8 +280,8 @@ public:
         effects["has_medpack"] = gvalue{false};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -300,8 +300,8 @@ public:
         effects["at_medpack_room"] = gvalue{false};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 /**
@@ -320,8 +320,8 @@ public:
         effects["has_bandage"] = gvalue{false};
     }
 
-    bool setup() override { return true; }
-    bool end() override { return true; }
+    bool on_start() override { return true; }
+    void on_end(bool) override { }
 };
 
 
