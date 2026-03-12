@@ -7,7 +7,7 @@
 
 bool gmotive::is_satisfied(const gworld_model &world_model) const
 {
-    return std::ranges::all_of(desired_state.get_states(),
+    return std::ranges::all_of(goal_state.get_states(),
         [&world_model](const auto& state_entry)
         {
             const auto& [key, desired_value] = state_entry;

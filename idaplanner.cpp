@@ -5,7 +5,6 @@
 #include "idaplanner.h"
 #include "gtypes.h"
 #include <algorithm>
-#include <iostream>
 #include <ranges>
 #include <vector>
 #include <limits>
@@ -70,11 +69,15 @@ bool idaplanner::inverse_depth_first_search(
     std::vector<gaction::const_ptr>& plan,
     const int depth)
 {
-    if (current_options.time_budget_ms >= 0)
+    if (current_options.time_budget_ms >= 0 || current_options.cancel_token != nullptr)
     {
         const auto now = std::chrono::steady_clock::now();
-        if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
-            elapsed > current_options.time_budget_ms)
+        const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
+        const bool timed_out = current_options.time_budget_ms >= 0
+            && elapsed > current_options.time_budget_ms;
+        const bool cancelled = current_options.cancel_token != nullptr && current_options.cancel_token->load(std::memory_order_relaxed);
+
+        if (timed_out || cancelled)
         {
             failure_reason = gplan_status::TimedOut;
             return false;

@@ -39,6 +39,12 @@ public:
     }
 
     [[nodiscard]] std::shared_ptr<gmotive> select_goal(const gworld_model& world_model) const;
+    [[nodiscard]] std::optional<gworld_model> select_goal_state(const gworld_model& world_model) const
+    {
+        const auto motive = select_goal(world_model);
+        if (!motive) return std::nullopt;
+        return motive->get_goal_state();
+    }
     [[nodiscard]] std::vector<std::pair<std::shared_ptr<gmotive>, float>> evaluate_all_motives(const gworld_model& world_model) const;
     [[nodiscard]] const std::vector<std::shared_ptr<gmotive>>& get_motives() const { return motives; }
 };

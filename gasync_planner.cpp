@@ -19,16 +19,23 @@ void gasync_planner::plan_async(
     is_planning.store(true);
     should_cancel.store(false);
 
+    planner_options planner_options = options;
+    planner_options.cancel_token = &should_cancel;
+
     planning_future = std::async(std::launch::async,
-        [this, initial_state, goal_state, actions = std::move(available_actions),
-         heuristic = std::move(heuristic), options]() mutable -> gplan_result
+        [this,
+            initial_state,
+            goal_state,
+            actions = std::move(available_actions),
+         heuristic = std::move(heuristic),
+         planner_options]() mutable -> gplan_result
         {
             auto result = planner.plan(
                 initial_state,
                 goal_state,
                 actions,
                 *heuristic,
-                options
+                planner_options
             );
 
             is_planning.store(false);
