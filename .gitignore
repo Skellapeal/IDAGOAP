@@ -1,2 +1,12 @@
-.idea/editor.xml
-.idea/inspectionProfiles/Project_Default.xml
+.idea/
+*.iml
+out/
+*.class
+*.log
+*.DS_Store
+*.user
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
