@@ -1,5 +1,5 @@
 //
-// Created by ismis on 04/03/2026.
+// Created by Niall Ó Colmáin on 04/03/2026.
 //
 
 #ifndef IDAGOAP_GPLAN_RESULT_H

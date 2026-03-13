@@ -10,7 +10,7 @@
 bool gaction::check_preconditions(const gworld_model &world_model) const
 {
     return std::ranges::all_of(preconditions | std::views::values,
-        [&world_model](const auto& condition) { return condition.evaluate(world_model); });
+        [&world_model](const auto& condition) { return condition.evaluate(world_model, TODO); });
 }
 
 void gaction::apply_effects(gworld_model& world_model) const

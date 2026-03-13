@@ -5,6 +5,7 @@
 #include "idaplanner.h"
 #include "gtypes.h"
 #include <algorithm>
+#include <atomic>
 #include <ranges>
 #include <vector>
 #include <limits>
@@ -74,8 +75,9 @@ bool idaplanner::inverse_depth_first_search(
         const auto now = std::chrono::steady_clock::now();
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
         const bool timed_out = current_options.time_budget_ms >= 0
-            && elapsed > current_options.time_budget_ms;
-        const bool cancelled = current_options.cancel_token != nullptr && current_options.cancel_token->load(std::memory_order_relaxed);
+            && elapsed > static_cast<std::chrono::milliseconds>(current_options.time_budget_ms);
+        const bool cancelled = current_options.cancel_token != nullptr
+            && current_options.cancel_token->load(std::memory_order_relaxed);
 
         if (timed_out || cancelled)
         {
@@ -141,7 +143,7 @@ bool idaplanner::inverse_depth_first_search(
             }
             else
             {
-                if (!condition.evaluate(initial_state))
+                if (!condition.evaluate(initial_state, key))
                 {
                     current_goal = previous_goal;
                 }

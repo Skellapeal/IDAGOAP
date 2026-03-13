@@ -5,7 +5,7 @@
 #include "gtypes.h"
 #include "gworld_model.h"
 
-bool gcondition::evaluate(const gworld_model& world_model) const
+bool gcondition::evaluate(const gworld_model& world_model, const std::string& key) const
 {
     const auto world_value = world_model.get_state(key);
     if (!world_value) return false;
