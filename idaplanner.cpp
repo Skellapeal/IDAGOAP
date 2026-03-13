@@ -153,7 +153,7 @@ bool idaplanner::regressive_ida_search(
         if (non_equal_precondition_failed)
         {
             current_goal = previous_goal;
-            continue;   // Don't allow push_back() if precondition check is non-equal (neither equal or unequal)
+            continue;   // Don't allow push_back() if precondition check is non-equal (neither equal nor unequal)
         }
 
         plan.push_back(action);
