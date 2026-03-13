@@ -6,7 +6,6 @@
 #define IDAGOAP_GHEURISTIC_H
 #include "gworld_model.h"
 
-
 class gheuristic
 {
 public:

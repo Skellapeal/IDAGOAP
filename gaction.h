@@ -44,7 +44,7 @@ public:
 
     void add_precondition(const std::string& key, const gvalue& value, const gcomparison comparison = gcomparison::Equal)
     {
-        preconditions[key] = gcondition(key, value, comparison);
+        preconditions[key] = gcondition(value, comparison);
     }
 
     void add_effect(const std::string& key, const gvalue& value)
