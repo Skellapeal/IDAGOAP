@@ -79,3 +79,11 @@ std::optional<std::vector<float>> gworld_model::get_position(const std::string& 
     }
     return std::nullopt;
 }
+
+void gworld_model::merge(const gworld_model &other)
+{
+    for (const auto& [key, value] : other.get_states())
+    {
+        states[key] = value;
+    }
+}

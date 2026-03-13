@@ -51,17 +51,16 @@ bool idaplanner::has_precondition_conflict(const gaction::const_ptr& action, con
 
 bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start)
 {
-    for (const auto& [key, value] : regressed_goal.get_states())
-    {
-        if (auto start_value = start.get_state(key); !start_value || *start_value != value)
+    return !std::ranges::any_of(regressed_goal.get_states(),
+        [&](const std::pair<const std::string, gvalue>& goal_entry)
         {
-            return false;
-        }
-    }
-    return true;
+            const auto& [key, goal_value] = goal_entry;
+            const auto start_value = start.get_state(key);
+            return !start_value || *start_value != goal_value;
+        });
 }
 
-bool idaplanner::inverse_depth_first_search(
+bool idaplanner::regressive_ida_search(
     gworld_model& current_goal,
     const gworld_model& initial_state,
     const std::span<gaction::const_ptr> available_actions,
@@ -134,7 +133,7 @@ bool idaplanner::inverse_depth_first_search(
             current_goal.remove_state(key);
         }
 
-        // Add new preconditions to goal
+        bool non_equal_precondition_failed = false;
         for (const auto& [key, condition] : action->get_preconditions())
         {
             if (condition.comparison == gcomparison::Equal)
@@ -145,14 +144,21 @@ bool idaplanner::inverse_depth_first_search(
             {
                 if (!condition.evaluate(initial_state, key))
                 {
-                    current_goal = previous_goal;
+                    non_equal_precondition_failed = true;
+                    break;
                 }
             }
         }
 
+        if (non_equal_precondition_failed)
+        {
+            current_goal = previous_goal;
+            continue;   // Don't allow push_back() if precondition check is non-equal (neither equal or unequal)
+        }
+
         plan.push_back(action);
 
-        if (inverse_depth_first_search(current_goal, initial_state, available_actions, heuristic,
+        if (regressive_ida_search(current_goal, initial_state, available_actions, heuristic,
                                        accumulated_cost + action->get_cost(), cost_limit, next_cost_limit, plan, depth + 1))
         {
             return true;
@@ -183,7 +189,10 @@ gplan_result idaplanner::plan(
     failure_reason = gplan_status::Success;
     start_time = std::chrono::steady_clock::now();
 
+    table.set_max_size(current_options.max_transposition_size);
+
     std::vector<gaction::const_ptr> usable_actions;
+    usable_actions.reserve(available_actions.size());
     for (const auto& action : available_actions)
     {
         if (action -> can_run())
@@ -194,7 +203,23 @@ gplan_result idaplanner::plan(
 
     if (usable_actions.empty())
     {
-        result.status = gplan_status::NoSolutionExists;
+        if (is_goal_reached(goal_state, initial_state))
+        {
+            result.status = gplan_status::Success;
+            result.nodes_expanded = 0;
+        }
+        else
+        {
+            result.status = gplan_status::NoSolutionExists;
+        }
+        return result;
+    }
+
+    if (is_goal_reached(goal_state, initial_state))
+    {
+        result.status = gplan_status::Success;
+        result.nodes_expanded = 0;
+        result.planning_time_ms = 0;
         return result;
     }
 
@@ -202,21 +227,19 @@ gplan_result idaplanner::plan(
     int bound = heuristic.estimate(initial_state, goal_state);
     std::vector<gaction::const_ptr> plan;
 
-    table.set_max_size(current_options.max_transposition_size);
-
     while (true)
     {
         table.clear();
         int next_bound = std::numeric_limits<int>::max();
 
-        if (inverse_depth_first_search(current_goal, initial_state, usable_actions, heuristic,
+        if (regressive_ida_search(current_goal, initial_state, usable_actions, heuristic,
                                        0,bound, next_bound, plan))
         {
             std::ranges::reverse(plan);
             result.actions = std::move(plan);
             result.status = gplan_status::Success;
-
             result.final_cost = 0;
+
             for (const auto& action : result.actions)
             {
                 result.final_cost += action->get_cost();

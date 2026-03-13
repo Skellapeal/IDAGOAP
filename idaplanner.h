@@ -18,22 +18,22 @@
 struct planner_options
 {
     int max_depth = std::numeric_limits<int>::max();
-    int max_nodes = std::numeric_limits<int>::max();
+    int64_t max_nodes = std::numeric_limits<int64_t>::max();
     int time_budget_ms = -1;
     bool use_transposition_table = true;
-    int max_transposition_size = std::numeric_limits<int>::max();
+    size_t max_transposition_size = std::numeric_limits<size_t>::max();
     const std::atomic<bool>* cancel_token = nullptr;
 };
 
 class idaplanner
 {
     gtranpos_table table;
-    int nodes_expanded = 0;
+    int64_t nodes_expanded = 0;
     planner_options current_options;
     std::chrono::steady_clock::time_point start_time;
     gplan_status failure_reason = gplan_status::Success;
 
-    bool inverse_depth_first_search(
+    bool regressive_ida_search(
         gworld_model &current_goal,
         const gworld_model &initial_state,
         std::span<gaction::const_ptr> available_actions,
@@ -47,14 +47,14 @@ class idaplanner
     [[nodiscard]] static bool has_precondition_conflict(const gaction::const_ptr& action, const gworld_model &current_goal);
 
 public:
-    gplan_result plan(
+    [[nodiscard]] gplan_result plan(
         const gworld_model &initial_state,
         const gworld_model &goal_state,
         std::span<gaction::const_ptr> available_actions,
         const gheuristic &heuristic,
         const planner_options &options);
 
-    gplan_result plan(
+    [[nodiscard]] gplan_result plan(
         const gworld_model &initial_state,
         const gworld_model &goal_state,
         std::span<gaction::const_ptr> available_actions,

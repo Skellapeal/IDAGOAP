@@ -4,9 +4,11 @@
 
 #ifndef IDAGOAP_GWORLD_MODEL_H
 #define IDAGOAP_GWORLD_MODEL_H
+#include <algorithm>
 #include <optional>
+#include <ranges>
+#include <unordered_map>
 #include <variant>
-#include "gaction.h"
 #include "gtypes.h"
 
 class gworld_model
@@ -37,6 +39,8 @@ public:
     void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, gvalue{std::vector{x, y, z}}); }
     [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
 
+    void merge(const gworld_model& other);
+
     [[nodiscard]] bool operator==(const gworld_model &other) const;
 };
 
@@ -45,14 +49,27 @@ struct std::hash<gworld_model>
 {
     size_t operator()(const gworld_model& model) const noexcept
     {
-        size_t seed = 0;
-        for (const auto& [key, value] : model.get_states())
-        {
-            const size_t key_hash = hash<string>{}(key);
-            const size_t value_hash = hash<gvalue>{}(value);
+        const auto& raw = model.get_states();
 
-            seed ^= key_hash + value_hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-            seed ^= value_hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        std::vector<std::string_view> keys;
+        keys.reserve(raw.size());
+
+        for (const auto &k: raw | views::keys)
+        {
+            keys.emplace_back(k);
+        }
+        ranges::sort(keys);
+
+        size_t seed = 0;
+        constexpr std::hash<gvalue> value_hasher;
+
+        for (const auto& key : keys)
+        {
+            const size_t key_hash = hash<std::string_view>{}(key);
+            const size_t value_hash = value_hasher(raw.at(std::string(key)));
+
+            seed ^= key_hash + 0x9e3779b9U + (seed << 6) + (seed >> 2);
+            seed ^= value_hash + 0x9e3779b9U + (seed << 6) + (seed >> 2);
         }
         return seed;
     }

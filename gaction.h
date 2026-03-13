@@ -20,11 +20,11 @@ enum class action_status
     Failed
 };
 
-class gaction : public std::enable_shared_from_this<gaction>
+class gaction
 {
 protected:
     std::string name;
-    int cost = 0.0f;
+    int cost = 0;
 
     std::unordered_map<std::string, gcondition> preconditions;
     std::unordered_map<std::string, gvalue> effects;
@@ -73,7 +73,7 @@ public:
     void apply_effects(gworld_model& world_model) const;
 
     virtual bool on_start() { return true; }
-    virtual action_status on_tick(float delta_time) { return action_status::Succeeded; }
+    virtual action_status on_tick(float delta_time) { return action_status::Running; }
     virtual void on_end(bool success) {}
     virtual void on_interrupt() {}
 };

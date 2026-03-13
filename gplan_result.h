@@ -23,7 +23,7 @@ struct gplan_result
     std::vector<gaction::const_ptr> actions;
     gplan_status status = gplan_status::Success;
 
-    int nodes_expanded = 0;
+    int64_t  nodes_expanded = 0;
     int final_cost = 0;
     int planning_time_ms = 0;
 
