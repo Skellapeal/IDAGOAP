@@ -23,7 +23,22 @@ target_include_directories(IDAGOAP PUBLIC
         $<INSTALL_INTERFACE:include/rida_goap>
 )
 
-set_target_properties(IDAGOAP PROPERTIES PUBLIC_HEADER)
+set_target_properties(IDAGOAP PROPERTIES
+        PUBLIC_HEADER
+        "rida_goap.h;
+        goap_types.h;
+        world_state.h;
+        goap_action.h;
+        heuristic.h;
+        heuristics.h;
+        plan_result.h;
+        rida_planner.h;
+        async_planner.h;
+        plan_executor.h;
+        motive.h;
+        goal_selector.h;
+        transposition_table.h"
+)
 
 option(IDAGOAP_BUILD_TESTS "Build IDAGOAP tests" ON)
 
