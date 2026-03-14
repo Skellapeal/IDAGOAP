@@ -129,32 +129,12 @@ namespace rida_goap
                 current_goal.remove_state(key);
             }
 
-            auto is_regressable = [](const predicate_op comparison) -> bool
-            {
-                return comparison == predicate_op::Equal || comparison == predicate_op::NotEqual;
-            };
-
-            bool non_regressable_precondition = false;
             for (const auto& [key, condition] : action->get_preconditions())
             {
                 if (condition.predicate == predicate_op::Equal)
                 {
                     current_goal.set_state(key, condition.s_value);
                 }
-                else
-                {
-                    if (!is_regressable(condition.predicate))
-                    {
-                        non_regressable_precondition = true;
-                        break;
-                    }
-                }
-            }
-
-            if (non_regressable_precondition)
-            {
-                current_goal = previous_goal;
-                continue;   // Relational preconditions cannot be regressed.
             }
 
             plan.push_back(action);
