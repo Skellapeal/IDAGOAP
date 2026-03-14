@@ -25,19 +25,19 @@ private:
 
 public:
     void plan_async(
-        const gworld_model& initial_state,
-        const gworld_model& goal_state,
-        std::vector<gaction::const_ptr> available_actions,
+        const gworld_model &initial_state,
+        const gworld_model &goal_state,
+        std::vector<gaction::ptr> available_actions,
         std::shared_ptr<gheuristic> heuristic,
-        const planner_options& options = planner_options{});
+        const planner_options &options = planner_options{});
 
     void plan_async(
-        const gworld_model& initial_state,
-        const gworld_model& goal_state,
-        std::vector<gaction::const_ptr> available_actions,
+        const gworld_model &initial_state,
+        const gworld_model &goal_state,
+        std::vector<gaction::ptr> available_actions,
         std::shared_ptr<gheuristic> heuristic,
         completion_callback callback,
-        const planner_options& options = planner_options{});
+        const planner_options &options = planner_options{});
 
     [[nodiscard]] bool is_planning_active() const { return is_planning.load(); }
     void cancel_planning();

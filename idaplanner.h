@@ -50,14 +50,14 @@ public:
     [[nodiscard]] gplan_result plan(
         const gworld_model &initial_state,
         const gworld_model &goal_state,
-        std::span<gaction::const_ptr> available_actions,
+        std::span<gaction::ptr> available_actions,
         const gheuristic &heuristic,
         const planner_options &options);
 
     [[nodiscard]] gplan_result plan(
         const gworld_model &initial_state,
         const gworld_model &goal_state,
-        std::span<gaction::const_ptr> available_actions,
+        const std::span<gaction::ptr> available_actions,
         const gheuristic &heuristic)
     {
         constexpr planner_options default_options;

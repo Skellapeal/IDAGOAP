@@ -7,7 +7,7 @@
 void gasync_planner::plan_async(
     const gworld_model& initial_state,
     const gworld_model& goal_state,
-    std::vector<gaction::const_ptr> available_actions,
+    std::vector<gaction::ptr> available_actions,
     std::shared_ptr<gheuristic> heuristic,
     const planner_options& options)
 {
@@ -38,7 +38,7 @@ void gasync_planner::plan_async(
 void gasync_planner::plan_async(
     const gworld_model& initial_state,
     const gworld_model& goal_state,
-    std::vector<gaction::const_ptr> available_actions,
+    std::vector<gaction::ptr> available_actions,
     std::shared_ptr<gheuristic> heuristic,
     completion_callback callback,
     const planner_options& options)

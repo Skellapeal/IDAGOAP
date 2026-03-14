@@ -173,7 +173,7 @@ bool idaplanner::regressive_ida_search(
 gplan_result idaplanner::plan(
     const gworld_model &initial_state,
     const gworld_model &goal_state,
-    const std::span<gaction::const_ptr> available_actions,
+    const std::span<gaction::ptr> available_actions,
     const gheuristic &heuristic,
     const planner_options &options)
 {
