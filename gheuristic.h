@@ -11,17 +11,8 @@ class gheuristic
 public:
     virtual ~gheuristic() = default;
 
-    [[nodiscard]] virtual int estimate(const gworld_model& world_model, const gworld_model& goal) const
-    {
-        int unsatisfied = 0;
-        for (const auto& [key, goal_value] : goal.get_states())
-        {
-            if (const auto current_value = world_model.get_state(key);
-                !current_value || *current_value != goal_value)
-                ++unsatisfied;
-        }
-        return unsatisfied;
-    }
+    // Force subclasses to implement estimate method
+    [[nodiscard]] virtual int estimate(const gworld_model& world_model, const gworld_model& goal) const = 0;
 };
 
 

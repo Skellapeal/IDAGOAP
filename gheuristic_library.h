@@ -7,8 +7,12 @@
 
 #include "gheuristic.h"
 #include <cmath>
+#include <memory>
 
-class dijkstras_heuristic : public gheuristic
+///@brief
+/// Uses dijkstra's heuristic (0). Correct but potentially slow
+/// use for testing or only when no better heuristic is available.
+class zero_heuristic : public gheuristic
 {
 public:
     [[nodiscard]] int estimate(const gworld_model& world_model, const gworld_model& goal) const override
@@ -17,6 +21,9 @@ public:
     }
 };
 
+///@brief
+/// Counts unsatisfied goals by the world model.
+/// This is the standard heuristic for GOAP
 class goal_count_heuristic : public gheuristic
 {
 public:
@@ -42,6 +49,10 @@ public:
     }
 };
 
+///@brief
+/// Euclidean distance between world and goal positions.
+/// Only meaningful for position navigation.
+/// Defaults to 0 if either world or goal lacks position key
 class euclidean_heuristic : public gheuristic
 {
     std::string position_key;
@@ -54,8 +65,10 @@ public:
         const auto current_pos = world_model.get_position(position_key);
         const auto goal_pos = goal.get_position(position_key);
 
-        if (!current_pos || !goal_pos) return 0;
-
+        if (!current_pos || !goal_pos)
+        {
+            return 0;
+        }
         float distance = 0.0f;
         const size_t dims = std::min(current_pos->size(), goal_pos->size());
 
@@ -69,6 +82,9 @@ public:
     }
 };
 
+///@brief
+/// Manhattan distance between world and goal positions.
+/// Ideal for grid-based movement without diagonals.
 class manhattan_heuristic : public gheuristic
 {
     std::string position_key;
@@ -96,6 +112,9 @@ public:
     }
 };
 
+///@brief
+/// Weighted combination of multiple heuristics.
+/// Weights > 1.0 no longer guarantee optimal routing
 class composite_heuristic : public gheuristic
 {
     std::vector<std::pair<std::shared_ptr<gheuristic>, float>> heuristics;
