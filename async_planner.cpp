@@ -28,10 +28,10 @@ namespace rida_goap
                 initial_state, goal_state,
                 actions = std::move(available_actions),
                 heuristic = std::move(heuristic),
-                options,
+                effective_options,
                 completion_handler]() mutable -> plan_result
             {
-                auto result = planner.plan(initial_state, goal_state, actions, *heuristic, options);
+                auto result = planner.plan(initial_state, goal_state, actions, *heuristic, effective_options);
                 is_planning.store(false);
 
                 if (completion_handler && !should_cancel.load()) completion_handler(result);
