@@ -4,44 +4,47 @@
 
 #include "transposition_table.h"
 
-std::optional<int> transposition_table::lookup(const world_state &state)
+namespace rida_goap
 {
-    const auto it = table.find(state);
-    if (it == table.end())
+    std::optional<int> transposition_table::lookup(const world_state &state)
     {
-        return std::nullopt;
-    }
+        const auto it = table.find(state);
+        if (it == table.end())
+        {
+            return std::nullopt;
+        }
 
-    eviction_order.splice(eviction_order.begin(), eviction_order, it->second.second);
-    return it->second.first;
-}
-
-void transposition_table::store(const world_state &state, const int cost)
-{
-    if (const auto it = table.find(state); it != table.end())
-    {
-        it->second.first = cost;
         eviction_order.splice(eviction_order.begin(), eviction_order, it->second.second);
-        return;
+        return it->second.first;
     }
 
-    if (table.size() >= max_size && !eviction_order.empty())
+    void transposition_table::store(const world_state &state, const int cost)
     {
-        table.erase(eviction_order.back());
-        eviction_order.pop_back();
+        if (const auto it = table.find(state); it != table.end())
+        {
+            it->second.first = cost;
+            eviction_order.splice(eviction_order.begin(), eviction_order, it->second.second);
+            return;
+        }
+
+        if (table.size() >= max_size && !eviction_order.empty())
+        {
+            table.erase(eviction_order.back());
+            eviction_order.pop_back();
+        }
+
+        eviction_order.push_front(state);
+        table.emplace(state, std::make_pair(cost, eviction_order.begin()));
     }
 
-    eviction_order.push_front(state);
-    table.emplace(state, std::make_pair(cost, eviction_order.begin()));
-}
+    void transposition_table::clear()
+    {
+        table.clear();
+        eviction_order.clear();
+    }
 
-void transposition_table::clear()
-{
-    table.clear();
-    eviction_order.clear();
-}
-
-size_t transposition_table::size() const
-{
-    return table.size();
+    size_t transposition_table::size() const
+    {
+        return table.size();
+    }
 }

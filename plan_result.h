@@ -9,30 +9,33 @@
 #include <memory>
 #include "goap_action.h"
 
-enum class gplan_status
+namespace rida_goap
 {
-    Success,                    // Found and built a plan
-    NoSolutionExists,           // No action sequence satisfies the goal
-    TimedOut,                   // Time budget elapsed
-    DepthLimitReached,          // Hit max depth
-    NodeLimitReached            // Hit max nodes
-};
+    enum class plan_status
+    {
+        Success,                    // Found and built a plan
+        NoSolutionExists,           // No action sequence satisfies the goal
+        TimedOut,                   // Time budget elapsed
+        DepthLimitReached,          // Hit max depth
+        NodeLimitReached            // Hit max nodes
+    };
 
-struct plan_result
-{
-    std::vector<goap_action::const_ptr> actions;
-    gplan_status status = gplan_status::Success;
+    struct plan_result
+    {
+        std::vector<goap_action::const_ptr> actions;
+        plan_status status = plan_status::Success;
 
-    int64_t  nodes_expanded = 0;
-    int final_cost = 0;
-    int planning_time_ms = 0;
+        int64_t  nodes_expanded = 0;
+        int final_cost = 0;
+        int planning_time_ms = 0;
 
-    [[nodiscard]] bool success() const { return status == gplan_status::Success; }
-    [[nodiscard]] bool is_trivially_satisfied() const { return status == gplan_status::Success && actions.empty(); }
-    [[nodiscard]] bool has_no_actions() const { return actions.empty(); }
-    [[nodiscard]] size_t size() const { return actions.size(); }
+        [[nodiscard]] bool success() const { return status == plan_status::Success; }
+        [[nodiscard]] bool is_trivially_satisfied() const { return status == plan_status::Success && actions.empty(); }
+        [[nodiscard]] bool has_no_actions() const { return actions.empty(); }
+        [[nodiscard]] size_t size() const { return actions.size(); }
 
-    [[nodiscard]] std::string status_string() const;
-};
+        [[nodiscard]] std::string status_string() const;
+    };
+}
 
 #endif //IDAGOAP_PLAN_RESULT_H

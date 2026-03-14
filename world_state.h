@@ -11,45 +11,47 @@
 #include <variant>
 #include "goap_types.h"
 
-class world_state
-{
-    std::unordered_map<std::string, state_value> states;
+namespace rida_goap {
+    class world_state
+    {
+        std::unordered_map<std::string, state_value> states;
 
-public:
-    void set_state(const std::string& key, state_value value);
-    [[nodiscard]] std::optional<state_value> get_state(const std::string& key) const;
+    public:
+        void set_state(const std::string& key, state_value value);
+        [[nodiscard]] std::optional<state_value> get_state(const std::string& key) const;
 
-    [[nodiscard]] bool has_state(const std::string& key) const;
-    void remove_state(const std::string& key);
+        [[nodiscard]] bool has_state(const std::string& key) const;
+        void remove_state(const std::string& key);
 
-    [[nodiscard]] const std::unordered_map<std::string, state_value>& get_states() const;
+        [[nodiscard]] const std::unordered_map<std::string, state_value>& get_states() const;
 
-    void set_int(const std::string& key, int value) { set_state(key, state_value{value}); }
-    [[nodiscard]] std::optional<int> get_int(const std::string& key) const;
+        void set_int(const std::string& key, int value) { set_state(key, state_value{value}); }
+        [[nodiscard]] std::optional<int> get_int(const std::string& key) const;
 
-    void set_bool(const std::string& key, bool value) { set_state(key, state_value{value}); }
-    [[nodiscard]] std::optional<bool> get_bool(const std::string& key) const;
+        void set_bool(const std::string& key, bool value) { set_state(key, state_value{value}); }
+        [[nodiscard]] std::optional<bool> get_bool(const std::string& key) const;
 
-    void set_float(const std::string& key, float value) { set_state(key, state_value{value}); }
-    [[nodiscard]]std::optional<float> get_float(const std::string &key) const;
+        void set_float(const std::string& key, float value) { set_state(key, state_value{value}); }
+        [[nodiscard]]std::optional<float> get_float(const std::string &key) const;
 
-    void set_string(const std::string& key, std::string value) { set_state(key, state_value{ std::move(value) }); }
-    [[nodiscard]] std::optional<std::string> get_string(const std::string& key) const;
+        void set_string(const std::string& key, std::string value) { set_state(key, state_value{ std::move(value) }); }
+        [[nodiscard]] std::optional<std::string> get_string(const std::string& key) const;
 
-    void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, state_value{std::vector{x, y, z}}); }
-    [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
+        void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, state_value{std::vector{x, y, z}}); }
+        [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
 
-    void merge(const world_state& other);
+        void merge(const world_state& other);
 
-    [[nodiscard]] bool satisfies(const world_state& goal) const;
+        [[nodiscard]] bool satisfies(const world_state& goal) const;
 
-    [[nodiscard]] bool operator==(const world_state &other) const;
-};
+        [[nodiscard]] bool operator==(const world_state &other) const;
+    };
+}
 
 template <>
-struct std::hash<world_state>
+struct std::hash<rida_goap::world_state>
 {
-    size_t operator()(const world_state& model) const noexcept
+    size_t operator()(const rida_goap::world_state& model) const noexcept
     {
         const auto& raw = model.get_states();
 
@@ -63,7 +65,7 @@ struct std::hash<world_state>
         ranges::sort(keys);
 
         size_t seed = 0;
-        constexpr std::hash<state_value> value_hasher;
+        constexpr std::hash<rida_goap::state_value> value_hasher;
 
         for (const auto& key : keys)
         {
@@ -76,4 +78,5 @@ struct std::hash<world_state>
         return seed;
     }
 };
+
 #endif //IDAGOAP_WORLD_STATE_H

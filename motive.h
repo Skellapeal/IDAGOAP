@@ -6,19 +6,20 @@
 #define IDAGOAP_MOTIVE_H
 #include "world_state.h"
 
-
-class motive
+namespace rida_goap
 {
-    world_state goal_state;
-    int priority = 0;
+    class motive
+    {
+        world_state goal_state;
+        int priority = 0;
 
-public:
-    explicit motive(world_state desired, const int priority = 0) : goal_state(std::move(desired)), priority(priority) {}
+    public:
+        explicit motive(world_state desired, const int priority = 0) : goal_state(std::move(desired)), priority(priority) {}
 
-    [[nodiscard]] int get_priority() const { return priority; }
-    [[nodiscard]] const world_state& get_goal_state() const { return goal_state; }
-    [[nodiscard]] bool is_satisfied(const world_state &goal) const;
-};
-
+        [[nodiscard]] int get_priority() const { return priority; }
+        [[nodiscard]] const world_state& get_goal_state() const { return goal_state; }
+        [[nodiscard]] bool is_satisfied(const world_state &world_model) const;
+    };
+}
 
 #endif //IDAGOAP_MOTIVE_H

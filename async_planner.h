@@ -11,44 +11,47 @@
 #include "rida_planner.h"
 #include "plan_result.h"
 
-class async_planner
+namespace rida_goap
 {
-public:
-    using completion_callback = std::function<void(plan_result)>;
-
-private:
-    rida_planner planner;
-    std::future<plan_result> planning_future;
-    std::atomic<bool> is_planning{false};
-    std::atomic<bool> should_cancel{false};
-    completion_callback on_completed;
-
-public:
-    void plan_async(
-        const world_state &initial_state,
-        const world_state &goal_state,
-        std::vector<goap_action::ptr> available_actions,
-        std::shared_ptr<heuristic> heuristic,
-        const planner_options &options = planner_options{});
-
-    void plan_async(
-        const world_state &initial_state,
-        const world_state &goal_state,
-        std::vector<goap_action::ptr> available_actions,
-        std::shared_ptr<heuristic> heuristic,
-        completion_callback callback,
-        const planner_options &options = planner_options{});
-
-    [[nodiscard]] bool is_planning_active() const { return is_planning.load(); }
-    void cancel_planning();
-
-    [[nodiscard]] bool try_get_result(plan_result& result);
-    plan_result wait_for_result();
-
-    void set_completion_callback(completion_callback callback)
+    class async_planner
     {
-        on_completed = std::move(callback);
-    }
-};
+    public:
+        using completion_callback = std::function<void(plan_result)>;
+
+    private:
+        rida_planner planner;
+        std::future<plan_result> planning_future;
+        std::atomic<bool> is_planning{false};
+        std::atomic<bool> should_cancel{false};
+        completion_callback on_completed;
+
+    public:
+        void plan_async(
+            const world_state &initial_state,
+            const world_state &goal_state,
+            std::vector<goap_action::ptr> available_actions,
+            std::shared_ptr<heuristic> heuristic,
+            const planner_options &options = planner_options{});
+
+        void plan_async(
+            const world_state &initial_state,
+            const world_state &goal_state,
+            std::vector<goap_action::ptr> available_actions,
+            std::shared_ptr<heuristic> heuristic,
+            completion_callback callback,
+            const planner_options &options = planner_options{});
+
+        [[nodiscard]] bool is_planning_active() const { return is_planning.load(); }
+        void cancel_planning();
+
+        [[nodiscard]] bool try_get_result(plan_result& result);
+        plan_result wait_for_result();
+
+        void set_completion_callback(completion_callback callback)
+        {
+            on_completed = std::move(callback);
+        }
+    };
+}
 
 #endif //IDAGOAP_ASYNC_PLANNER_H

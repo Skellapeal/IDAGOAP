@@ -7,19 +7,22 @@
 #include <unordered_map>
 #include <optional>
 
-class transposition_table
+namespace rida_goap
 {
-    std::list<world_state> eviction_order;  // Least Recently Used
-    std::unordered_map<world_state, std::pair<int, std::list<world_state>::iterator>> table;
-    size_t max_size = std::numeric_limits<size_t>::max();
+    class transposition_table
+    {
+        std::list<world_state> eviction_order;  // Least Recently Used
+        std::unordered_map<world_state, std::pair<int, std::list<world_state>::iterator>> table;
+        size_t max_size = std::numeric_limits<size_t>::max();
 
-public:
-    void set_max_size(const size_t max) { max_size = max; }
+    public:
+        void set_max_size(const size_t max) { max_size = max; }
 
-    [[nodiscard]] std::optional<int> lookup(const world_state& state);
-    void store(const world_state& state, int cost);
-    void clear();
-    [[nodiscard]] size_t size() const;
-};
+        [[nodiscard]] std::optional<int> lookup(const world_state& state);
+        void store(const world_state& state, int cost);
+        void clear();
+        [[nodiscard]] size_t size() const;
+    };
+}
 
 #endif // TRANSPOSITION_TABLE_H

@@ -11,64 +11,66 @@
 #include <variant>
 #include <vector>
 
-class world_state;
-
-enum class predicate_op
+namespace rida_goap
 {
-    Equal,
-    NotEqual,
-    Less,
-    LessOrEqual,
-    Greater,
-    GreaterOrEqual
-};
-
-using state_value = std::variant<int, bool, float, std::string, std::vector<float>>;
-
-struct state_condition
-{
-    state_value s_value;
-    predicate_op predicate = predicate_op::Equal;
-
-    state_condition() = default;
-
-    explicit state_condition(state_value value, const predicate_op comparison = predicate_op::Equal)
-    : s_value(std::move(value)), predicate(comparison) {}
-
-    [[nodiscard]] bool evaluate(const world_state &world_model, const std::string &key) const;
-
-private:
-    template <typename T>
-
-    [[nodiscard]] bool compare(const T& lhs, const T& rhs) const
+    class world_state;
+    enum class predicate_op
     {
-        if constexpr (std::is_same_v<T, bool> ||
-            std::is_same_v<T, std::string> ||
-            std::is_same_v<T, std::vector<float>>)
+        Equal,
+        NotEqual,
+        Less,
+        LessOrEqual,
+        Greater,
+        GreaterOrEqual
+    };
+
+    using state_value = std::variant<int, bool, float, std::string, std::vector<float>>;
+
+    struct state_condition
+    {
+        state_value s_value;
+        predicate_op predicate = predicate_op::Equal;
+
+        state_condition() = default;
+
+        explicit state_condition(state_value value, const predicate_op comparison = predicate_op::Equal)
+        : s_value(std::move(value)), predicate(comparison) {}
+
+        [[nodiscard]] bool evaluate(const world_state &world_model, const std::string &key) const;
+
+    private:
+        template <typename T>
+
+        [[nodiscard]] bool compare(const T& lhs, const T& rhs) const
         {
-            if (predicate != predicate_op::Equal && predicate != predicate_op::NotEqual)
+            if constexpr (std::is_same_v<T, bool> ||
+                std::is_same_v<T, std::string> ||
+                std::is_same_v<T, std::vector<float>>)
             {
-                return false;
+                if (predicate != predicate_op::Equal && predicate != predicate_op::NotEqual)
+                {
+                    return false;
+                }
+            }
+
+            switch (predicate)
+            {
+                case predicate_op::Equal:            return lhs == rhs;
+                case predicate_op::NotEqual:         return lhs != rhs;
+                case predicate_op::Less:             return lhs < rhs;
+                case predicate_op::LessOrEqual:      return lhs <= rhs;
+                case predicate_op::Greater:          return lhs > rhs;
+                case predicate_op::GreaterOrEqual:   return lhs >= rhs;
+                default:                             return false;
             }
         }
-
-        switch (predicate)
-        {
-            case predicate_op::Equal:            return lhs == rhs;
-            case predicate_op::NotEqual:         return lhs != rhs;
-            case predicate_op::Less:             return lhs < rhs;
-            case predicate_op::LessOrEqual:      return lhs <= rhs;
-            case predicate_op::Greater:          return lhs > rhs;
-            case predicate_op::GreaterOrEqual:   return lhs >= rhs;
-            default:                             return false;
-        }
-    }
-};
+    };
+}
 
 template<>
-struct std::hash<state_value>
+struct std::hash<rida_goap::state_value>
 {
-    std::size_t operator()(const state_value& value) const noexcept
+    std::size_t operator()(const rida_goap::state_value& value) const noexcept
     {
         return std::visit([]<typename ValueType>(const ValueType& held_value) -> size_t
         {

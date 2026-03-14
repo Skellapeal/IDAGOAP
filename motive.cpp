@@ -4,7 +4,10 @@
 
 #include "motive.h"
 
-bool motive::is_satisfied(const world_state &world_model) const
+namespace rida_goap
 {
-    return world_model.satisfies(goal_state);
+    bool motive::is_satisfied(const world_state &world_model) const
+    {
+        return world_model.satisfies(goal_state);
+    }
 }

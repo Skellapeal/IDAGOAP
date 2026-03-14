@@ -6,14 +6,16 @@
 #define IDAGOAP_HEURISTIC_H
 #include "world_state.h"
 
-class heuristic
+namespace rida_goap
 {
-public:
-    virtual ~heuristic() = default;
+    class heuristic
+    {
+    public:
+        virtual ~heuristic() = default;
 
-    // Force subclasses to implement estimate method
-    [[nodiscard]] virtual int estimate(const world_state& world_model, const world_state& goal) const = 0;
-};
-
+        // Force subclasses to implement estimate method
+        [[nodiscard]] virtual int estimate(const world_state& world_model, const world_state& goal) const = 0;
+    };
+}
 
 #endif //IDAGOAP_HEURISTIC_H

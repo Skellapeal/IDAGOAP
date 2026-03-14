@@ -7,19 +7,22 @@
 #include "world_state.h"
 #include "goap_action.h"
 
-bool goap_action::check_preconditions(const world_state &world_model) const
+namespace rida_goap
 {
-    return std::ranges::all_of(preconditions,[&world_model](const auto& entry)
+    bool goap_action::check_preconditions(const world_state &world_model) const
     {
-        const auto& [key, condition] = entry;
-        return condition.evaluate(world_model, key);
-    });
-}
+        return std::ranges::all_of(preconditions,[&world_model](const auto& entry)
+        {
+            const auto& [key, condition] = entry;
+            return condition.evaluate(world_model, key);
+        });
+    }
 
-void goap_action::apply_effects(world_state& world_model) const
-{
-    for (const auto& [key, value] : effects)
+    void goap_action::apply_effects(world_state& world_model) const
     {
-        world_model.set_state(key, value);
+        for (const auto& [key, value] : effects)
+        {
+            world_model.set_state(key, value);
+        }
     }
 }

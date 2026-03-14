@@ -4,81 +4,87 @@
 
 #include "async_planner.h"
 
-void async_planner::plan_async(
-    const world_state& initial_state,
-    const world_state& goal_state,
-    std::vector<goap_action::ptr> available_actions,
-    std::shared_ptr<heuristic> heuristic,
-    const planner_options& options)
+namespace rida_goap
 {
-    if (is_planning.load()) cancel_planning();
+    void async_planner::plan_async(
+        const world_state& initial_state,
+        const world_state& goal_state,
+        std::vector<goap_action::ptr> available_actions,
+        std::shared_ptr<heuristic> heuristic,
+        const planner_options& options)
+    {
+        if (is_planning.load()) cancel_planning();
 
-    is_planning.store(true);
-    should_cancel.store(false);
+        is_planning.store(true);
+        should_cancel.store(false);
 
-    const auto completion_handler = on_completed;
+        planner_options effective_options = options;
+        effective_options.cancel_token = &should_cancel;
 
-    planning_future = std::async(std::launch::async,
-        [this,
-            initial_state, goal_state,
-            actions = std::move(available_actions),
-            heuristic = std::move(heuristic),
-            options,
-            completion_handler]() mutable -> plan_result
+        const auto completion_handler = on_completed;
+
+        planning_future = std::async(std::launch::async,
+            [this,
+                initial_state, goal_state,
+                actions = std::move(available_actions),
+                heuristic = std::move(heuristic),
+                options,
+                completion_handler]() mutable -> plan_result
+            {
+                auto result = planner.plan(initial_state, goal_state, actions, *heuristic, options);
+                is_planning.store(false);
+
+                if (completion_handler && !should_cancel.load()) completion_handler(result);
+                return result;
+            }
+        );
+    }
+
+    void async_planner::plan_async(
+        const world_state& initial_state,
+        const world_state& goal_state,
+        std::vector<goap_action::ptr> available_actions,
+        std::shared_ptr<heuristic> heuristic,
+        completion_callback callback,
+        const planner_options& options)
+    {
+        set_completion_callback(std::move(callback));
+        plan_async(initial_state, goal_state, std::move(available_actions),
+                   std::move(heuristic), options);
+    }
+
+    void async_planner::cancel_planning()
+    {
+        should_cancel.store(true);
+
+        if (planning_future.valid())
         {
-            auto result = planner.plan(initial_state, goal_state, actions, *heuristic, options);
-            is_planning.store(false);
-
-            if (completion_handler && !should_cancel.load()) completion_handler(result);
-            return result;
+            planning_future.wait();
         }
-    );
-}
 
-void async_planner::plan_async(
-    const world_state& initial_state,
-    const world_state& goal_state,
-    std::vector<goap_action::ptr> available_actions,
-    std::shared_ptr<heuristic> heuristic,
-    completion_callback callback,
-    const planner_options& options)
-{
-    set_completion_callback(std::move(callback));
-    plan_async(initial_state, goal_state, std::move(available_actions),
-               std::move(heuristic), options);
-}
-
-void async_planner::cancel_planning()
-{
-    should_cancel.store(true);
-
-    if (planning_future.valid())
-    {
-        planning_future.wait();
+        is_planning.store(false);
     }
 
-    is_planning.store(false);
-}
-
-bool async_planner::try_get_result(plan_result& out_result)
-{
-    if (!planning_future.valid()) return false;
-
-    if (planning_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+    bool async_planner::try_get_result(plan_result& out_result)
     {
-        out_result = planning_future.get();
-        return true;
+        if (!planning_future.valid()) return false;
+
+        if (planning_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        {
+            out_result = planning_future.get();
+            return true;
+        }
+
+        return false;
     }
 
-    return false;
-}
-
-plan_result async_planner::wait_for_result()
-{
-    if (planning_future.valid())
+    plan_result async_planner::wait_for_result()
     {
-        return planning_future.get();
-    }
+        if (planning_future.valid())
+        {
+            return planning_future.get();
+        }
 
-    return plan_result{};
+        return plan_result{};
+    }
 }

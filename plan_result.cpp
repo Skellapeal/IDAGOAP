@@ -4,21 +4,24 @@
 
 #include "plan_result.h"
 
-std::string plan_result::status_string() const
+namespace rida_goap
 {
-    switch (status)
+    std::string plan_result::status_string() const
     {
-        case gplan_status::Success:
-            return "Success";
-        case gplan_status::NoSolutionExists:
-            return "No solution exists";
-        case gplan_status::TimedOut:
-            return "Planning Timed out";
-        case gplan_status::DepthLimitReached:
-            return "Depth limit reached";
-        case gplan_status::NodeLimitReached:
-            return "Node limit reached";
-        default:
-            return "Unknown status";
+        switch (status)
+        {
+            case plan_status::Success:
+                return "Success";
+            case plan_status::NoSolutionExists:
+                return "No solution exists";
+            case plan_status::TimedOut:
+                return "Planning Timed out";
+            case plan_status::DepthLimitReached:
+                return "Depth limit reached";
+            case plan_status::NodeLimitReached:
+                return "Node limit reached";
+            default:
+                return "Unknown status";
+        }
     }
 }
