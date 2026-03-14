@@ -8,6 +8,8 @@
 #include "../goap_action.h"
 #include "../goap_types.h"
 
+using namespace rida_goap;
+
 /**
  * Test action: Gather wood from the environment
  * Preconditions: none

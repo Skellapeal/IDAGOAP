@@ -13,6 +13,8 @@
 #include "../plan_result.h"
 #include "test_actions.h"
 
+using namespace rida_goap;
+
 int tests_passed = 0;
 int tests_failed = 0;
 
@@ -162,7 +164,7 @@ TEST(test_no_solution_exists)
     print_plan(result);
 
     assert(!result.success());
-    assert(result.status == gplan_status::NoSolutionExists);
+    assert(result.status == plan_status::NoSolutionExists);
     assert(result.has_no_actions());
 }
 
@@ -244,7 +246,7 @@ TEST(test_node_limit_reached)
     print_plan(result);
 
     assert(!result.success());
-    assert(result.status == gplan_status::NodeLimitReached);
+    assert(result.status == plan_status::NodeLimitReached);
     assert(result.nodes_expanded <= 6);
 }
 
@@ -277,7 +279,7 @@ TEST(test_time_budget_enforced)
 
     if (!result.success())
     {
-        assert(result.status == gplan_status::TimedOut);
+        assert(result.status == plan_status::TimedOut);
         std::cout << "  (Correctly timed out)\n";
     }
     else
@@ -491,7 +493,7 @@ TEST(test_depth_limit_reached)
     print_plan(result_limited);
 
     assert(!result_limited.success());
-    assert(result_limited.status == gplan_status::DepthLimitReached);
+    assert(result_limited.status == plan_status::DepthLimitReached);
 
     std::cout << "  (Depth limit correctly enforced at depth 3)\n";
 }
@@ -651,7 +653,7 @@ TEST(test_precondition_conflict_detected)
     print_plan(result);
 
     assert(!result.success());
-    assert(result.status == gplan_status::NoSolutionExists);
+    assert(result.status == plan_status::NoSolutionExists);
 
     std::cout << "  Correctly detected precondition conflict:\n";
     std::cout << "    - UseAntidote requires is_nighttime=false (daytime)\n";
@@ -718,7 +720,7 @@ TEST(test_precondition_conflict_resolved)
     print_plan(result);
 
     assert(result.success());
-    assert(result.status == gplan_status::Success);
+    assert(result.status == plan_status::Success);
 
     std::cout << "  Adding new action correctly resolved existing conflict:\n";
     std::cout << "    - UseAntidote requires is_nighttime=false (daytime)\n";
