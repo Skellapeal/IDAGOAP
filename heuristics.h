@@ -5,17 +5,17 @@
 #ifndef IDAGOAP_GHEURISTIC_LIBRARY_H
 #define IDAGOAP_GHEURISTIC_LIBRARY_H
 
-#include "gheuristic.h"
+#include "heurisitc.h"
 #include <cmath>
 #include <memory>
 
 ///@brief
 /// Uses dijkstra's heuristic (0). Correct but potentially slow
 /// use for testing or only when no better heuristic is available.
-class zero_heuristic : public gheuristic
+class zero_heuristic : public heurisitc
 {
 public:
-    [[nodiscard]] int estimate(const gworld_model& world_model, const gworld_model& goal) const override
+    [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
     {
         return 0;
     }
@@ -24,10 +24,10 @@ public:
 ///@brief
 /// Counts unsatisfied goals by the world model.
 /// This is the standard heuristic for GOAP
-class goal_count_heuristic : public gheuristic
+class goal_count_heuristic : public heurisitc
 {
 public:
-    [[nodiscard]] int estimate(const gworld_model& world_model, const gworld_model& goal) const override
+    [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
     {
         int unsatisfied = 0;
 
@@ -53,14 +53,14 @@ public:
 /// Euclidean distance between world and goal positions.
 /// Only meaningful for position navigation.
 /// Defaults to 0 if either world or goal lacks position key
-class euclidean_heuristic : public gheuristic
+class euclidean_heuristic : public heurisitc
 {
     std::string position_key;
 
 public:
     explicit euclidean_heuristic(std::string pos_key = "position") : position_key(std::move(pos_key)) {}
 
-    [[nodiscard]] int estimate(const gworld_model& world_model, const gworld_model& goal) const override
+    [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
     {
         const auto current_pos = world_model.get_position(position_key);
         const auto goal_pos = goal.get_position(position_key);
@@ -85,7 +85,7 @@ public:
 ///@brief
 /// Manhattan distance between world and goal positions.
 /// Ideal for grid-based movement without diagonals.
-class manhattan_heuristic : public gheuristic
+class manhattan_heuristic : public heurisitc
 {
     std::string position_key;
 
@@ -93,7 +93,7 @@ public:
     explicit manhattan_heuristic(std::string pos_key = "position")
         : position_key(std::move(pos_key)) {}
 
-    [[nodiscard]] int estimate(const gworld_model& world_model, const gworld_model& goal) const override
+    [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
     {
         const auto current_pos = world_model.get_position(position_key);
         const auto goal_pos = goal.get_position(position_key);
@@ -115,17 +115,17 @@ public:
 ///@brief
 /// Weighted combination of multiple heuristics.
 /// Weights > 1.0 no longer guarantee optimal routing
-class composite_heuristic : public gheuristic
+class composite_heuristic : public heurisitc
 {
-    std::vector<std::pair<std::shared_ptr<gheuristic>, float>> heuristics;
+    std::vector<std::pair<std::shared_ptr<heurisitc>, float>> heuristics;
 
 public:
-    void add_heuristic(std::shared_ptr<gheuristic> h, float weight = 1.0f)
+    void add_heuristic(std::shared_ptr<heurisitc> h, float weight = 1.0f)
     {
         heuristics.emplace_back(std::move(h), weight);
     }
 
-    [[nodiscard]] int estimate(const gworld_model& world_model, const gworld_model& goal) const override
+    [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
     {
         float total = 0.0f;
 

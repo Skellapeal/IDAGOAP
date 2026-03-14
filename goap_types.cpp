@@ -2,10 +2,10 @@
 // Created by Niall Ó Colmáin on 05/03/2026.
 //
 
-#include "gtypes.h"
-#include "gworld_model.h"
+#include "goap_types.h"
+#include "world_state.h"
 
-bool gcondition::evaluate(const gworld_model& world_model, const std::string& key) const
+bool gcondition::evaluate(const world_state& world_model, const std::string& key) const
 {
     const auto world_value = world_model.get_state(key);
     if (!world_value) return false;

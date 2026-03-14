@@ -2,9 +2,9 @@
 // Created by Niall Ó Colmáin on 07/03/2026.
 //
 
-#include "gplan_executor.h"
+#include "plan_executor.h"
 
-void gplan_executor::set_plan(gplan_result plan, gworld_model goal)
+void plan_executor::set_plan(plan_result plan, world_state goal)
 {
     if (is_running()) interrupt();
 
@@ -18,7 +18,7 @@ void gplan_executor::set_plan(gplan_result plan, gworld_model goal)
     status = current_plan.success() ? execution_status::Running : execution_status::Failed;
 }
 
-execution_result gplan_executor::tick(const float delta_time)
+execution_result plan_executor::tick(const float delta_time)
 {
     execution_result result;
     result.status = status;
@@ -46,7 +46,7 @@ execution_result gplan_executor::tick(const float delta_time)
 
     if (!current_action)
     {
-        current_action = std::const_pointer_cast<gaction>(current_plan.actions[current_action_index]);
+        current_action = std::const_pointer_cast<goap_action>(current_plan.actions[current_action_index]);
         action_started = false;
     }
 
@@ -114,7 +114,7 @@ execution_result gplan_executor::tick(const float delta_time)
     return result;
 }
 
-void gplan_executor::interrupt()
+void plan_executor::interrupt()
 {
     if (current_action && action_started)
     {
@@ -127,21 +127,21 @@ void gplan_executor::interrupt()
     action_started = false;
 }
 
-void gplan_executor::reset()
+void plan_executor::reset()
 {
     interrupt();
-    current_plan = gplan_result{};
-    goal_state = gworld_model{};
+    current_plan = plan_result{};
+    goal_state = world_state{};
     current_action_index = 0;
     status = execution_status::Idle;
 }
 
-bool gplan_executor::start_current_action() const
+bool plan_executor::start_current_action() const
 {
     return current_action && current_action->on_start();
 }
 
-void gplan_executor::end_current_action(const bool success) const
+void plan_executor::end_current_action(const bool success) const
 {
     if (!current_action) return;
 
@@ -149,19 +149,19 @@ void gplan_executor::end_current_action(const bool success) const
     current_action->on_end(success);
 }
 
-bool gplan_executor::validate_preconditions() const
+bool plan_executor::validate_preconditions() const
 {
     if (!current_action || !world_model) return false;
     return current_action->check_preconditions(*world_model);
 }
 
-bool gplan_executor::attempt_replan()
+bool plan_executor::attempt_replan()
 {
-    if (!on_replan_needed || !world_model) return false;
+    if (!on_replan_requested || !world_model) return false;
 
-    if (gplan_result new_plan = on_replan_needed(*world_model, goal_state); new_plan.success())
+    if (plan_result new_plan = on_replan_requested(*world_model, goal_state); new_plan.success())
     {
-        const gworld_model saved_goal = goal_state;
+        const world_state saved_goal = goal_state;
         set_plan(std::move(new_plan), saved_goal);
         status = execution_status::Running;
         return true;

@@ -7,8 +7,8 @@
 
 #include <memory>
 #include <functional>
-#include "gplan_result.h"
-#include "gworld_model.h"
+#include "plan_result.h"
+#include "world_state.h"
 
 enum class execution_status
 {
@@ -27,39 +27,39 @@ struct execution_result
     std::string failure_reason;
 };
 
-class gplan_executor
+class plan_executor
 {
 public:
-    using replan_callback = std::function<gplan_result(const gworld_model& current_world, const gworld_model& goal)>;
+    using replan_callback = std::function<plan_result(const world_state& current_world, const world_state& goal)>;
 
 private:
-    gplan_result current_plan;
-    gworld_model goal_state;
+    plan_result current_plan;
+    world_state goal_state;
 
     size_t current_action_index = 0;
-    gaction::ptr current_action;
+    goap_action::ptr current_action;
     execution_status status = execution_status::Idle;
 
-    replan_callback on_replan_needed;
-    gworld_model* world_model = nullptr;
+    replan_callback on_replan_requested;
+    world_state* world_model = nullptr;
 
     bool action_started = false;
     bool auto_replan = true;
 
 public:
-    explicit gplan_executor(gworld_model* world = nullptr) : world_model(world) {}
+    explicit plan_executor(world_state* world_model = nullptr) : world_model(world_model) {}
 
-    void set_plan(gplan_result plan, gworld_model goal);
-    void set_world_model(gworld_model* world) { world_model = world;}
-    void set_replan_callback(replan_callback callback) { on_replan_needed = std::move(callback); }
+    void set_plan(plan_result plan, world_state goal);
+    void set_world_model(world_state* world) { world_model = world;}
+    void set_replan_callback(replan_callback callback) { on_replan_requested = std::move(callback); }
     void set_auto_replan(const bool enable) { auto_replan = enable; }
 
     [[nodiscard]] execution_status get_status() const { return status; }
     [[nodiscard]] bool is_running() const { return status == execution_status::Running; }
     [[nodiscard]] bool is_complete() const { return status == execution_status::Success || status == execution_status::Failed; }
     [[nodiscard]] size_t get_current_action_index() const { return current_action_index; }
-    [[nodiscard]] std::shared_ptr<const gaction> get_current_action() const { return current_action; }
-    [[nodiscard]] const gplan_result& get_plan() const { return current_plan; }
+    [[nodiscard]] std::shared_ptr<const goap_action> get_current_action() const { return current_action; }
+    [[nodiscard]] const plan_result& get_plan() const { return current_plan; }
 
     execution_result tick(float delta_time);
     void interrupt();

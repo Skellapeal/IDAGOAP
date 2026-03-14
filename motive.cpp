@@ -2,9 +2,9 @@
 // Created by Niall Ó Colmáin on 16/02/2026.
 //
 
-#include "gmotive.h"
+#include "motive.h"
 
-bool gmotive::is_satisfied(const gworld_model &world_model) const
+bool motive::is_satisfied(const world_state &world_model) const
 {
     return world_model.satisfies(goal_state);
 }

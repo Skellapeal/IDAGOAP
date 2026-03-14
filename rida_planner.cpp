@@ -2,15 +2,15 @@
 // Created by Niall Ó Colmáin on 16/02/2026.
 //
 
-#include "idaplanner.h"
-#include "gtypes.h"
+#include "rida_planner.h"
+#include "goap_types.h"
 #include <algorithm>
 #include <atomic>
 #include <ranges>
 #include <vector>
 #include <limits>
 
-bool idaplanner::is_action_relevant(const gaction::const_ptr& action, const gworld_model &current_goal)
+bool rida_planner::is_action_relevant(const goap_action::const_ptr& action, const world_state &current_goal)
 {
     const auto& effects = action->get_effects();
 
@@ -28,7 +28,7 @@ bool idaplanner::is_action_relevant(const gaction::const_ptr& action, const gwor
 }
 
 
-bool idaplanner::has_precondition_conflict(const gaction::const_ptr& action, const gworld_model &current_goal)
+bool rida_planner::has_precondition_conflict(const goap_action::const_ptr& action, const world_state &current_goal)
 {
     const auto& effects = action->get_effects();
 
@@ -49,18 +49,18 @@ bool idaplanner::has_precondition_conflict(const gaction::const_ptr& action, con
     );
 }
 
-bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start)
+bool rida_planner::is_goal_reached(const world_state& regressed_goal, const world_state& start)
 {
     return start.satisfies(regressed_goal);
 }
 
-bool idaplanner::regressive_ida_search(
-    gworld_model& current_goal,
-    const gworld_model& initial_state,
-    const std::span<gaction::const_ptr> available_actions,
-    const gheuristic &heuristic,
+bool rida_planner::regressive_ida_search(
+    world_state& current_goal,
+    const world_state& initial_state,
+    const std::span<goap_action::const_ptr> available_actions,
+    const heurisitc &heuristic,
     const int accumulated_cost, const int cost_limit, int& next_cost_limit,
-    std::vector<gaction::const_ptr>& plan,
+    std::vector<goap_action::const_ptr>& plan,
     const int depth)
 {
     if (current_options.time_budget_ms >= 0 || current_options.cancel_token != nullptr)
@@ -97,7 +97,7 @@ bool idaplanner::regressive_ida_search(
 
     if (current_options.use_transposition_table)
     {
-        if (const auto cached_cost = table.lookup(current_goal))
+        if (const auto cached_cost = transposition_table.lookup(current_goal))
         {
             if (*cached_cost <= total_cost)
             {
@@ -119,7 +119,7 @@ bool idaplanner::regressive_ida_search(
         if (!is_action_relevant(action, current_goal)) continue;
         if (has_precondition_conflict(action, current_goal)) continue;
 
-        const gworld_model previous_goal = current_goal;
+        const world_state previous_goal = current_goal;
 
         // Remove effects from the goal to allow for regression
         for (const auto &key: action->get_effects() | std::views::keys)
@@ -127,7 +127,12 @@ bool idaplanner::regressive_ida_search(
             current_goal.remove_state(key);
         }
 
-        bool non_equal_precondition_failed = false;
+        auto is_regressable = [](const gcomparison comparison) -> bool
+        {
+            return comparison == gcomparison::Equal || comparison == gcomparison::NotEqual;
+        };
+
+        bool non_regressable_precondition = false;
         for (const auto& [key, condition] : action->get_preconditions())
         {
             if (condition.comparison == gcomparison::Equal)
@@ -136,18 +141,18 @@ bool idaplanner::regressive_ida_search(
             }
             else
             {
-                if (!condition.evaluate(initial_state, key))
+                if (!is_regressable(condition.comparison))
                 {
-                    non_equal_precondition_failed = true;
+                    non_regressable_precondition = true;
                     break;
                 }
             }
         }
 
-        if (non_equal_precondition_failed)
+        if (non_regressable_precondition)
         {
             current_goal = previous_goal;
-            continue;   // Don't allow push_back() if precondition check is non-equal (neither equal nor unequal)
+            continue;   // Relational preconditions cannot be regressed.
         }
 
         plan.push_back(action);
@@ -164,28 +169,28 @@ bool idaplanner::regressive_ida_search(
 
     if (current_options.use_transposition_table)
     {
-        table.store(current_goal, total_cost);
+        transposition_table.store(current_goal, total_cost);
     }
 
     return false;
 }
 
-gplan_result idaplanner::plan(
-    const gworld_model &initial_state,
-    const gworld_model &goal_state,
-    const std::span<gaction::ptr> available_actions,
-    const gheuristic &heuristic,
+plan_result rida_planner::plan(
+    const world_state &initial_state,
+    const world_state &goal_state,
+    const std::span<goap_action::ptr> available_actions,
+    const heurisitc &heuristic,
     const planner_options &options)
 {
-    gplan_result result;
+    plan_result result;
     current_options = options;
     nodes_expanded = 0;
     failure_reason = gplan_status::Success;
     start_time = std::chrono::steady_clock::now();
 
-    table.set_max_size(current_options.max_transposition_size);
+    transposition_table.set_max_size(current_options.max_transposition_size);
 
-    std::vector<gaction::const_ptr> usable_actions;
+    std::vector<goap_action::const_ptr> usable_actions;
     usable_actions.reserve(available_actions.size());
     for (const auto& action : available_actions)
     {
@@ -217,13 +222,13 @@ gplan_result idaplanner::plan(
         return result;
     }
 
-    gworld_model current_goal = goal_state;
+    world_state current_goal = goal_state;
     int bound = heuristic.estimate(initial_state, goal_state);
-    std::vector<gaction::const_ptr> plan;
+    std::vector<goap_action::const_ptr> plan;
 
     while (true)
     {
-        table.clear();
+        transposition_table.clear();
         int next_bound = std::numeric_limits<int>::max();
 
         if (regressive_ida_search(current_goal, initial_state, usable_actions, heuristic,

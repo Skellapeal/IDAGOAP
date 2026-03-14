@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "gaction.h"
+#include "goap_action.h"
 
 enum class gplan_status
 {
@@ -18,9 +18,9 @@ enum class gplan_status
     NodeLimitReached            // Hit max nodes
 };
 
-struct gplan_result
+struct plan_result
 {
-    std::vector<gaction::const_ptr> actions;
+    std::vector<goap_action::const_ptr> actions;
     gplan_status status = gplan_status::Success;
 
     int64_t  nodes_expanded = 0;

@@ -2,13 +2,13 @@
 // Created by Niall Ó Colmáin on 08/03/2026.
 //
 
-#include "gasync_planner.h"
+#include "async_planner.h"
 
-void gasync_planner::plan_async(
-    const gworld_model& initial_state,
-    const gworld_model& goal_state,
-    std::vector<gaction::ptr> available_actions,
-    std::shared_ptr<gheuristic> heuristic,
+void async_planner::plan_async(
+    const world_state& initial_state,
+    const world_state& goal_state,
+    std::vector<goap_action::ptr> available_actions,
+    std::shared_ptr<heurisitc> heuristic,
     const planner_options& options)
 {
     if (is_planning.load()) cancel_planning();
@@ -16,7 +16,7 @@ void gasync_planner::plan_async(
     is_planning.store(true);
     should_cancel.store(false);
 
-    const auto captured_callback = on_complete;
+    const auto completion_handler = on_completed;
 
     planning_future = std::async(std::launch::async,
         [this,
@@ -24,22 +24,22 @@ void gasync_planner::plan_async(
             actions = std::move(available_actions),
             heuristic = std::move(heuristic),
             options,
-            captured_callback]() mutable -> gplan_result
+            completion_handler]() mutable -> plan_result
         {
             auto result = planner.plan(initial_state, goal_state, actions, *heuristic, options);
             is_planning.store(false);
 
-            if (captured_callback && !should_cancel.load()) captured_callback(result);
+            if (completion_handler && !should_cancel.load()) completion_handler(result);
             return result;
         }
     );
 }
 
-void gasync_planner::plan_async(
-    const gworld_model& initial_state,
-    const gworld_model& goal_state,
-    std::vector<gaction::ptr> available_actions,
-    std::shared_ptr<gheuristic> heuristic,
+void async_planner::plan_async(
+    const world_state& initial_state,
+    const world_state& goal_state,
+    std::vector<goap_action::ptr> available_actions,
+    std::shared_ptr<heurisitc> heuristic,
     completion_callback callback,
     const planner_options& options)
 {
@@ -48,7 +48,7 @@ void gasync_planner::plan_async(
                std::move(heuristic), options);
 }
 
-void gasync_planner::cancel_planning()
+void async_planner::cancel_planning()
 {
     should_cancel.store(true);
 
@@ -60,7 +60,7 @@ void gasync_planner::cancel_planning()
     is_planning.store(false);
 }
 
-bool gasync_planner::try_get_result(gplan_result& out_result)
+bool async_planner::try_get_result(plan_result& out_result)
 {
     if (!planning_future.valid()) return false;
 
@@ -73,12 +73,12 @@ bool gasync_planner::try_get_result(gplan_result& out_result)
     return false;
 }
 
-gplan_result gasync_planner::wait_for_result()
+plan_result async_planner::wait_for_result()
 {
     if (planning_future.valid())
     {
         return planning_future.get();
     }
 
-    return gplan_result{};
+    return plan_result{};
 }

@@ -6,39 +6,39 @@
 #include <algorithm>
 #include <limits>
 
-void goal_selector::add_motive(std::shared_ptr<gmotive> motive) { motives.push_back(std::move(motive)); }
-void goal_selector::remove_motive(const std::shared_ptr<gmotive> &motive) { std::erase(motives, motive); }
+void goal_selector::add_motive(std::shared_ptr<motive> motive) { motives.push_back(std::move(motive)); }
+void goal_selector::remove_motive(const std::shared_ptr<motive> &motive) { std::erase(motives, motive); }
 void goal_selector::clear_motives() { motives.clear(); }
 
-std::shared_ptr<gmotive> goal_selector::select_goal(const gworld_model &world_model) const
+std::shared_ptr<motive> goal_selector::select_goal(const world_state &world_model) const
 {
     if (motives.empty()) return nullptr;
 
-    std::shared_ptr<gmotive> best_motive = nullptr;
-    float best_utility = -std::numeric_limits<float>::infinity();
+    std::shared_ptr<motive> highest_priority_motive = nullptr;
+    float highest_utility = -std::numeric_limits<float>::infinity();
 
     for (const auto& motive : motives)
     {
         if (motive->is_satisfied(world_model)) continue;
 
-        if (const float utility = evaluator_utility(*motive, world_model); utility > best_utility)
+        if (const float utility = utility_fn(*motive, world_model); utility > highest_utility)
         {
-            best_utility = utility;
-            best_motive = motive;
+            highest_utility = utility;
+            highest_priority_motive = motive;
         }
     }
-    return best_motive;
+    return highest_priority_motive;
 }
 
-std::vector<std::pair<std::shared_ptr<gmotive>, float> > goal_selector::evaluate_all_motives(const gworld_model &world_model) const
+std::vector<std::pair<std::shared_ptr<motive>, float> > goal_selector::evaluate_all_motives(const world_state &world_model) const
 {
-    std::vector<std::pair<std::shared_ptr<gmotive>, float>> results;
+    std::vector<std::pair<std::shared_ptr<motive>, float>> results;
     results.reserve(motives.size());
 
     for (const auto& motive : motives)
     {
         if (motive->is_satisfied(world_model)) continue;
-        results.emplace_back(motive, evaluator_utility(*motive, world_model));
+        results.emplace_back(motive, utility_fn(*motive, world_model));
     }
 
     std::ranges::sort(results, [](const auto& a, const auto& b) { return a.second > b.second; });

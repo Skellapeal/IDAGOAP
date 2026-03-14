@@ -2,9 +2,9 @@
 // Created by Niall Ó Colmáin on 04/03/2026.
 //
 
-#include "gplan_result.h"
+#include "plan_result.h"
 
-std::string gplan_result::status_string() const
+std::string plan_result::status_string() const
 {
     switch (status)
     {

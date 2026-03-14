@@ -7,10 +7,10 @@
 #include <vector>
 #include <memory>
 
-#include "gheuristic_library.h"
-#include "../idaplanner.h"
-#include "../gworld_model.h"
-#include "../gplan_result.h"
+#include "heuristics.h"
+#include "../rida_planner.h"
+#include "../world_state.h"
+#include "../plan_result.h"
 #include "test_actions.h"
 
 int tests_passed = 0;
@@ -36,7 +36,7 @@ int tests_failed = 0;
     } name##_instance; \
     void name()
 
-void print_plan(const gplan_result& result)
+void print_plan(const plan_result& result)
 {
     std::cout << "\n";
     std::cout << "  Status: " << result.status_string() << "\n";
@@ -62,18 +62,18 @@ void print_plan(const gplan_result& result)
 
 TEST(test_simple_single_action_plan)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_wood", 1);
 
-    std::vector<gaction::ptr> actions = { std::make_shared<gather_wood_action>() };
+    std::vector<goap_action::ptr> actions = { std::make_shared<gather_wood_action>() };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -86,23 +86,23 @@ TEST(test_simple_single_action_plan)
 
 TEST(test_two_step_plan)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_tool", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_tool", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<gather_wood_action>(),
         std::make_shared<craft_tool_action>()
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -115,15 +115,15 @@ TEST(test_two_step_plan)
 
 TEST(test_complex_multi_resource_plan)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
     initial.set_int("has_shelter", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_shelter", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<gather_wood_action>(),
         std::make_shared<gather_stone_action>(),
@@ -131,9 +131,9 @@ TEST(test_complex_multi_resource_plan)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -145,19 +145,19 @@ TEST(test_complex_multi_resource_plan)
 
 TEST(test_no_solution_exists)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_tool", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_tool", 1);
 
-    std::vector<gaction::ptr> actions = { std::make_shared<craft_tool_action>() };
+    std::vector<goap_action::ptr> actions = { std::make_shared<craft_tool_action>() };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -168,18 +168,18 @@ TEST(test_no_solution_exists)
 
 TEST(test_already_at_goal)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 1);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_wood", 1);
 
-    std::vector<gaction::ptr> actions = { std::make_shared<gather_wood_action>() };
+    std::vector<goap_action::ptr> actions = { std::make_shared<gather_wood_action>() };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -191,22 +191,22 @@ TEST(test_already_at_goal)
 
 TEST(test_disabled_action_filtered)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_wood", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<gather_wood_action>(),
         std::make_shared<disabled_action>()
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -217,15 +217,15 @@ TEST(test_disabled_action_filtered)
 
 TEST(test_node_limit_reached)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
     initial.set_int("has_shelter", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_shelter", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<gather_wood_action>(),
         std::make_shared<gather_stone_action>(),
@@ -234,12 +234,12 @@ TEST(test_node_limit_reached)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
     planner_options options;
     options.max_nodes = 5;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic, options);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic, options);
 
     print_plan(result);
 
@@ -250,15 +250,15 @@ TEST(test_node_limit_reached)
 
 TEST(test_time_budget_enforced)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
     initial.set_int("has_shelter", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_shelter", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<gather_wood_action>(),
         std::make_shared<gather_stone_action>(),
@@ -266,12 +266,12 @@ TEST(test_time_budget_enforced)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
     planner_options options;
     options.time_budget_ms = 1;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic, options);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic, options);
 
     print_plan(result);
 
@@ -290,15 +290,15 @@ TEST(test_time_budget_enforced)
 
 TEST(test_heuristic_provides_guidance)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("has_wood", 0);
     initial.set_int("has_stone", 0);
     initial.set_int("has_shelter", 0);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("has_shelter", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<gather_wood_action>(),
         std::make_shared<gather_stone_action>(),
@@ -306,9 +306,9 @@ TEST(test_heuristic_provides_guidance)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -319,23 +319,23 @@ TEST(test_heuristic_provides_guidance)
 
 TEST(test_bool_preconditions_and_effects)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_bool("enemy_visible", false);
     initial.set_bool("is_hidden", false);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_bool("is_hidden", true);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<scout_action>(),
         std::make_shared<hide_action>()
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -384,7 +384,7 @@ TEST(test_float_equality_in_variant)
 
 TEST(test_is_action_relevant_debug)
 {
-    gworld_model goal;
+    world_state goal;
     goal.set_state("health", gvalue{100.0f});
 
     const auto rest = std::make_shared<rest_action>(); // no const here
@@ -403,21 +403,21 @@ TEST(test_is_action_relevant_debug)
 
 TEST(test_float_preconditions_and_effects)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_float("health", 30.0f);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_float("health", 100.0f);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<rest_action>()
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -431,23 +431,23 @@ TEST(test_float_preconditions_and_effects)
 
 TEST(test_mixed_type_world_state)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_int("ammo_count", 30);
     initial.set_bool("enemy_visible", false);
     initial.set_float("health", 100.0f);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_bool("enemy_visible", true);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<scout_action>()
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -460,12 +460,12 @@ TEST(test_mixed_type_world_state)
 
 TEST(test_depth_limit_reached)
 {
-    gworld_model initial;
+    world_state initial;
 
-    gworld_model goal;
+    world_state goal;
     goal.set_int("depth_5", 1);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<deep_action_1>(),
         std::make_shared<deep_action_2>(),
@@ -475,9 +475,9 @@ TEST(test_depth_limit_reached)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result_unlimited = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result_unlimited = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
     print_plan(result_unlimited);
 
     assert(result_unlimited.success());
@@ -487,7 +487,7 @@ TEST(test_depth_limit_reached)
     planner_options options;
     options.max_depth = 3;
 
-    const auto result_limited = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic, options);
+    const auto result_limited = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic, options);
     print_plan(result_limited);
 
     assert(!result_limited.success());
@@ -498,17 +498,17 @@ TEST(test_depth_limit_reached)
 
 TEST(test_complex_health_management_spike_trap)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_float("health", 20.0f);
     initial.set_bool("at_entrance", true);
     initial.set_bool("at_medpack_room", false);
     initial.set_bool("has_medpack", false);
     initial.set_bool("has_bandage", false);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_float("health", 100.0f);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<cross_spike_trap_action>(),
         std::make_shared<pickup_medpack_action>(),
@@ -518,9 +518,9 @@ TEST(test_complex_health_management_spike_trap)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -536,17 +536,17 @@ TEST(test_complex_health_management_spike_trap)
 
 TEST(test_complex_health_management_with_alternative)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_float("health", 20.0f);
     initial.set_bool("at_entrance", true);
     initial.set_bool("at_medpack_room", false);
     initial.set_bool("has_medpack", false);
     initial.set_bool("has_bandage", true);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_float("health", 100.0f);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<cross_spike_trap_action>(),
         std::make_shared<pickup_medpack_action>(),
@@ -555,9 +555,9 @@ TEST(test_complex_health_management_with_alternative)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -571,17 +571,17 @@ TEST(test_complex_health_management_with_alternative)
 
 TEST(test_complex_health_management_bandage_sufficient)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_float("health", 20.0f);
     initial.set_bool("at_entrance", true);
     initial.set_bool("at_medpack_room", false);
     initial.set_bool("has_medpack", false);
     initial.set_bool("has_bandage", true);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_float("health", 50.0f);
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<cross_spike_trap_action>(),
         std::make_shared<pickup_medpack_action>(),
@@ -590,9 +590,9 @@ TEST(test_complex_health_management_bandage_sufficient)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -605,52 +605,48 @@ TEST(test_complex_health_management_bandage_sufficient)
 
 TEST(test_precondition_conflict_detected)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_bool("is_poisoned", true);
     initial.set_bool("is_nighttime", true);
     initial.set_bool("has_antidote", true);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_bool("is_cured", true);
     goal.set_bool("is_nighttime", true);
 
-    class use_antidote_daytime_action : public gaction
+    class use_antidote_daytime_action : public goap_action
     {
     public:
-        use_antidote_daytime_action() : gaction("UseAntidoteDaytime", 5)
+        use_antidote_daytime_action() : goap_action("UseAntidoteDaytime", 5)
         {
             add_precondition("has_antidote", gvalue{true}, gcomparison::Equal);
             add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
 
-            effects["is_cured"]      = gvalue{true};
-            effects["has_antidote"]  = gvalue{false};
+            add_effect("is_cured", true);
+            add_effect("has_antidote", false);
         }
-        bool on_start() override { return true; }
-        void on_end(bool) override {}
     };
 
-    class wait_for_day_action : public gaction
+    class wait_for_day_action : public goap_action
     {
     public:
-        wait_for_day_action() : gaction("WaitForDay", 10)
+        wait_for_day_action() : goap_action("WaitForDay", 10)
         {
             add_precondition("is_nighttime", gvalue{true}, gcomparison::Equal);
-            effects["is_nighttime"] = gvalue{false};
+            add_effect("is_nighttime", false);
         }
-        bool on_start() override { return true; }
-        void on_end(bool) override {}
     };
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<use_antidote_daytime_action>(),
         std::make_shared<wait_for_day_action>()
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 
@@ -665,56 +661,49 @@ TEST(test_precondition_conflict_detected)
 
 TEST(test_precondition_conflict_resolved)
 {
-    gworld_model initial;
+    world_state initial;
     initial.set_bool("is_poisoned", true);
     initial.set_bool("is_nighttime", true);
     initial.set_bool("has_antidote", true);
 
-    gworld_model goal;
+    world_state goal;
     goal.set_bool("is_cured", true);
     goal.set_bool("is_nighttime", true);
 
-    class use_antidote_daytime_action : public gaction
+    class use_antidote_daytime_action : public goap_action
     {
     public:
-        use_antidote_daytime_action() : gaction("UseAntidoteDaytime", 5)
+        use_antidote_daytime_action() : goap_action("UseAntidoteDaytime", 5)
         {
             add_precondition("has_antidote", gvalue{true}, gcomparison::Equal);
             add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
 
-            effects["is_cured"]      = gvalue{true};
-            effects["has_antidote"]  = gvalue{false};
+            add_effect("is_cured", true);
+            add_effect("has_antidote", false);
         }
-        bool on_start() override { return true; }
-        void on_end(bool) override { }
     };
 
-    class wait_for_day_action : public gaction
+    class wait_for_day_action : public goap_action
     {
     public:
-        wait_for_day_action() : gaction("WaitForDay", 10)
+        wait_for_day_action() : goap_action("WaitForDay", 10)
         {
             add_precondition("is_nighttime", gvalue{true}, gcomparison::Equal);
-            effects["is_nighttime"] = gvalue{false};
+            add_effect("is_nighttime", false);
         }
-        bool on_start() override { return true; }
-        void on_end(bool) override { }
     };
 
-    class wait_for_nighttime_action : public gaction
+    class wait_for_nighttime_action : public goap_action
     {
     public:
-        wait_for_nighttime_action() : gaction("WaitForNighttime", 10)
+        wait_for_nighttime_action() : goap_action("WaitForNighttime", 10)
         {
             add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
-            effects["is_nighttime"] = gvalue{true};
+            add_effect("is_nighttime", true);
         }
-
-        bool on_start() override { return true; }
-        void on_end(bool) override { }
     };
 
-    std::vector<gaction::ptr> actions =
+    std::vector<goap_action::ptr> actions =
     {
         std::make_shared<use_antidote_daytime_action>(),
         std::make_shared<wait_for_day_action>(),
@@ -722,9 +711,9 @@ TEST(test_precondition_conflict_resolved)
     };
 
     const goal_count_heuristic heuristic;
-    idaplanner planner;
+    rida_planner planner;
 
-    const auto result = planner.plan(initial, goal, std::span<gaction::ptr>(actions), heuristic);
+    const auto result = planner.plan(initial, goal, std::span<goap_action::ptr>(actions), heuristic);
 
     print_plan(result);
 

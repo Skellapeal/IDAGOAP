@@ -7,22 +7,22 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(IDAGOAP STATIC
         library.cpp
-        idaplanner.cpp
-        gaction.cpp
-        gworld_model.cpp
-        gmotive.cpp
-        gtranpos_table.cpp
-        gplan_result.cpp
+        rida_planner.cpp
+        goap_action.cpp
+        world_state.cpp
+        motive.cpp
+        transposition_table.cpp
+        plan_result.cpp
         tests/test_actions.h
         tests/test_planner.cpp
-        gtypes.cpp
-        gplan_executor.cpp
-        gplan_executor.h
+        goap_types.cpp
+        plan_executor.cpp
+        plan_executor.h
         goal_selector.cpp
         goal_selector.h
-        gasync_planner.cpp
-        gasync_planner.h
-        gheuristic_library.h
+        async_planner.cpp
+        async_planner.h
+        heuristics.h
 )
 
 target_include_directories(IDAGOAP PUBLIC

@@ -4,10 +4,10 @@
 
 #include <algorithm>
 #include <ranges>
-#include "gworld_model.h"
-#include "gaction.h"
+#include "world_state.h"
+#include "goap_action.h"
 
-bool gaction::check_preconditions(const gworld_model &world_model) const
+bool goap_action::check_preconditions(const world_state &world_model) const
 {
     return std::ranges::all_of(preconditions,[&world_model](const auto& entry)
     {
@@ -16,7 +16,7 @@ bool gaction::check_preconditions(const gworld_model &world_model) const
     });
 }
 
-void gaction::apply_effects(gworld_model& world_model) const
+void goap_action::apply_effects(world_state& world_model) const
 {
     for (const auto& [key, value] : effects)
     {

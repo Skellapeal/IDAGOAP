@@ -9,9 +9,9 @@
 #include <ranges>
 #include <unordered_map>
 #include <variant>
-#include "gtypes.h"
+#include "goap_types.h"
 
-class gworld_model
+class world_state
 {
     std::unordered_map<std::string, gvalue> states;
 
@@ -39,17 +39,17 @@ public:
     void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, gvalue{std::vector{x, y, z}}); }
     [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
 
-    void merge(const gworld_model& other);
+    void merge(const world_state& other);
 
-    [[nodiscard]] bool satisfies(const gworld_model& goal) const;
+    [[nodiscard]] bool satisfies(const world_state& goal) const;
 
-    [[nodiscard]] bool operator==(const gworld_model &other) const;
+    [[nodiscard]] bool operator==(const world_state &other) const;
 };
 
 template <>
-struct std::hash<gworld_model>
+struct std::hash<world_state>
 {
-    size_t operator()(const gworld_model& model) const noexcept
+    size_t operator()(const world_state& model) const noexcept
     {
         const auto& raw = model.get_states();
 

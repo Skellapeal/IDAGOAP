@@ -4,15 +4,15 @@
 
 #ifndef IDAGOAP_GHEURISTIC_H
 #define IDAGOAP_GHEURISTIC_H
-#include "gworld_model.h"
+#include "world_state.h"
 
-class gheuristic
+class heurisitc
 {
 public:
-    virtual ~gheuristic() = default;
+    virtual ~heurisitc() = default;
 
     // Force subclasses to implement estimate method
-    [[nodiscard]] virtual int estimate(const gworld_model& world_model, const gworld_model& goal) const = 0;
+    [[nodiscard]] virtual int estimate(const world_state& world_model, const world_state& goal) const = 0;
 };
 
 

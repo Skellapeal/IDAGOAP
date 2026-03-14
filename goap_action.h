@@ -9,9 +9,9 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include "gtypes.h"
+#include "goap_types.h"
 
-class gworld_model;
+class world_state;
 
 enum class action_status
 {
@@ -20,7 +20,7 @@ enum class action_status
     Failed
 };
 
-class gaction
+class goap_action
 {
 protected:
     std::string name;
@@ -30,12 +30,12 @@ protected:
     std::unordered_map<std::string, gvalue> effects;
 
 public:
-    using ptr = std::shared_ptr<gaction>;
-    using const_ptr = std::shared_ptr<const gaction>;
+    using ptr = std::shared_ptr<goap_action>;
+    using const_ptr = std::shared_ptr<const goap_action>;
 
-    gaction(std::string name, const int cost) : name(std::move(name)), cost(cost) {}
+    goap_action(std::string name, const int cost) : name(std::move(name)), cost(cost) {}
 
-    virtual ~gaction() = default;
+    virtual ~goap_action() = default;
 
     [[nodiscard]] const std::string& get_name() const { return name; }
     [[nodiscard]] int get_cost() const { return cost; }
@@ -69,8 +69,8 @@ public:
      */
     [[nodiscard]] virtual bool can_run() const { return true; }
 
-    bool check_preconditions(const gworld_model& world_model) const;
-    void apply_effects(gworld_model& world_model) const;
+    bool check_preconditions(const world_state& world_model) const;
+    void apply_effects(world_state& world_model) const;
 
     virtual bool on_start() { return true; }
     virtual action_status on_tick(float delta_time) { return action_status::Running; }
