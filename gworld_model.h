@@ -41,6 +41,8 @@ public:
 
     void merge(const gworld_model& other);
 
+    [[nodiscard]] bool satisfies(const gworld_model& goal) const;
+
     [[nodiscard]] bool operator==(const gworld_model &other) const;
 };
 

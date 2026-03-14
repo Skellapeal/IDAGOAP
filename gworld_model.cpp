@@ -87,3 +87,14 @@ void gworld_model::merge(const gworld_model &other)
         states[key] = value;
     }
 }
+
+bool gworld_model::satisfies(const gworld_model &goal) const
+{
+    return !std::ranges::any_of(goal.get_states(),
+        [&](const std::pair<std::string, gvalue>& goal_state)
+        {
+            const auto& [key, value] = goal_state;
+            const auto start_value = goal.get_state(key);
+            return !start_value || start_value != value;
+        });
+}

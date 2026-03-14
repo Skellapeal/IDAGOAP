@@ -17,7 +17,7 @@ public:
 
     [[nodiscard]] int get_priority() const { return priority; }
     [[nodiscard]] const gworld_model& get_goal_state() const { return goal_state; }
-    [[nodiscard]] bool is_satisfied(const gworld_model &world_model) const;
+    [[nodiscard]] bool is_satisfied(const gworld_model &goal) const;
 };
 
 

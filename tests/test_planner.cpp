@@ -163,7 +163,7 @@ TEST(test_no_solution_exists)
 
     assert(!result.success());
     assert(result.status == gplan_status::NoSolutionExists);
-    assert(result.empty());
+    assert(result.has_no_actions());
 }
 
 TEST(test_already_at_goal)
@@ -184,7 +184,7 @@ TEST(test_already_at_goal)
     print_plan(result);
 
     assert(result.success());
-    assert(result.empty());
+    assert(result.has_no_actions());
     assert(result.final_cost == 0);
 }
 

@@ -51,13 +51,7 @@ bool idaplanner::has_precondition_conflict(const gaction::const_ptr& action, con
 
 bool idaplanner::is_goal_reached(const gworld_model& regressed_goal, const gworld_model& start)
 {
-    return !std::ranges::any_of(regressed_goal.get_states(),
-        [&](const std::pair<const std::string, gvalue>& goal_entry)
-        {
-            const auto& [key, goal_value] = goal_entry;
-            const auto start_value = start.get_state(key);
-            return !start_value || *start_value != goal_value;
-        });
+    return start.satisfies(regressed_goal);
 }
 
 bool idaplanner::regressive_ida_search(

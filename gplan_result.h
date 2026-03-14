@@ -28,7 +28,8 @@ struct gplan_result
     int planning_time_ms = 0;
 
     [[nodiscard]] bool success() const { return status == gplan_status::Success; }
-    [[nodiscard]] bool empty() const { return actions.empty(); }
+    [[nodiscard]] bool is_trivially_satisfied() const { return status == gplan_status::Success && actions.empty(); }
+    [[nodiscard]] bool has_no_actions() const { return actions.empty(); }
     [[nodiscard]] size_t size() const { return actions.size(); }
 
     [[nodiscard]] std::string status_string() const;
