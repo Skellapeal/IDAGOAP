@@ -5,8 +5,7 @@
 #ifndef IDAGOAP_TEST_ACTIONS_H
 #define IDAGOAP_TEST_ACTIONS_H
 
-#include "../goap_action.h"
-#include "../goap_types.h"
+#include "../rida_goap.h"
 
 using namespace rida_goap;
 

@@ -7,10 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "heuristics.h"
-#include "../rida_planner.h"
-#include "../world_state.h"
-#include "../plan_result.h"
+#include "../rida_goap.h"
 #include "test_actions.h"
 
 using namespace rida_goap;
