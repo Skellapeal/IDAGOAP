@@ -12,7 +12,6 @@ add_library(IDAGOAP STATIC
         motive.cpp
         transposition_table.cpp
         plan_result.cpp
-        tests/test_planner.cpp
         goap_types.cpp
         plan_executor.cpp
         goal_selector.cpp
