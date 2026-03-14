@@ -37,8 +37,8 @@ std::vector<std::pair<std::shared_ptr<gmotive>, float> > goal_selector::evaluate
 
     for (const auto& motive : motives)
     {
-        const float utility = evaluator_utility(*motive, world_model);
-        results.emplace_back(motive, utility);
+        if (motive->is_satisfied(world_model)) continue;
+        results.emplace_back(motive, evaluator_utility(*motive, world_model));
     }
 
     std::ranges::sort(results, [](const auto& a, const auto& b) { return a.second > b.second; });

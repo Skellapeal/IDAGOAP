@@ -11,40 +11,25 @@ void gasync_planner::plan_async(
     std::shared_ptr<gheuristic> heuristic,
     const planner_options& options)
 {
-    if (is_planning.load())
-    {
-        cancel_planning();
-    }
+    if (is_planning.load()) cancel_planning();
 
     is_planning.store(true);
     should_cancel.store(false);
 
-    planner_options planner_options = options;
-    planner_options.cancel_token = &should_cancel;
+    const auto captured_callback = on_complete;
 
     planning_future = std::async(std::launch::async,
         [this,
-            initial_state,
-            goal_state,
+            initial_state, goal_state,
             actions = std::move(available_actions),
-         heuristic = std::move(heuristic),
-         planner_options]() mutable -> gplan_result
+            heuristic = std::move(heuristic),
+            options,
+            captured_callback]() mutable -> gplan_result
         {
-            auto result = planner.plan(
-                initial_state,
-                goal_state,
-                actions,
-                *heuristic,
-                planner_options
-            );
-
+            auto result = planner.plan(initial_state, goal_state, actions, *heuristic, options);
             is_planning.store(false);
 
-            if (on_complete && !should_cancel.load())
-            {
-                on_complete(result);
-            }
-
+            if (captured_callback && !should_cancel.load()) captured_callback(result);
             return result;
         }
     );

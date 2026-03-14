@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 
+#include "gheuristic_library.h"
 #include "../idaplanner.h"
 #include "../gheuristic.h"
 #include "../gworld_model.h"
@@ -70,10 +71,10 @@ TEST(test_simple_single_action_plan)
 
     std::vector<gaction::const_ptr> actions = { std::make_shared<gather_wood_action>() };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -99,10 +100,10 @@ TEST(test_two_step_plan)
         std::make_shared<craft_tool_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -130,10 +131,10 @@ TEST(test_complex_multi_resource_plan)
         std::make_shared<build_shelter_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -154,10 +155,10 @@ TEST(test_no_solution_exists)
 
     std::vector<gaction::const_ptr> actions = { std::make_shared<craft_tool_action>() };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -176,15 +177,16 @@ TEST(test_already_at_goal)
 
     std::vector<gaction::const_ptr> actions = { std::make_shared<gather_wood_action>() };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
     assert(result.success());
     assert(result.has_no_actions());
+    assert(result.is_trivially_satisfied());
     assert(result.final_cost == 0);
 }
 
@@ -202,10 +204,10 @@ TEST(test_disabled_action_filtered)
         std::make_shared<disabled_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -232,13 +234,13 @@ TEST(test_node_limit_reached)
         std::make_shared<craft_tool_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
     planner_options options;
     options.max_nodes = 5;
 
-    auto result = planner.plan(initial, goal, actions, heuristic, options);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -264,13 +266,13 @@ TEST(test_time_budget_enforced)
         std::make_shared<build_shelter_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
     planner_options options;
     options.time_budget_ms = 1;
 
-    auto result = planner.plan(initial, goal, actions, heuristic, options);
+    const auto result = planner.plan(initial, goal, actions, heuristic, options);
 
     print_plan(result);
 
@@ -304,10 +306,10 @@ TEST(test_heuristic_provides_guidance)
         std::make_shared<build_shelter_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -331,10 +333,10 @@ TEST(test_bool_preconditions_and_effects)
         std::make_shared<hide_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -414,10 +416,10 @@ TEST(test_float_preconditions_and_effects)
         std::make_shared<rest_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -444,10 +446,10 @@ TEST(test_mixed_type_world_state)
         std::make_shared<scout_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -474,10 +476,10 @@ TEST(test_depth_limit_reached)
         std::make_shared<deep_action_5>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result_unlimited = planner.plan(initial, goal, actions, heuristic);
+    const auto result_unlimited = planner.plan(initial, goal, actions, heuristic);
     print_plan(result_unlimited);
 
     assert(result_unlimited.success());
@@ -487,7 +489,7 @@ TEST(test_depth_limit_reached)
     planner_options options;
     options.max_depth = 3;
 
-    auto result_limited = planner.plan(initial, goal, actions, heuristic, options);
+    const auto result_limited = planner.plan(initial, goal, actions, heuristic, options);
     print_plan(result_limited);
 
     assert(!result_limited.success());
@@ -517,10 +519,10 @@ TEST(test_complex_health_management_spike_trap)
         std::make_shared<use_bandage_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -554,10 +556,10 @@ TEST(test_complex_health_management_with_alternative)
         std::make_shared<use_bandage_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -589,10 +591,10 @@ TEST(test_complex_health_management_bandage_sufficient)
         std::make_shared<use_bandage_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -648,10 +650,10 @@ TEST(test_precondition_conflict_detected)
         std::make_shared<wait_for_day_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 
@@ -724,10 +726,10 @@ TEST(test_precondition_conflict_resolved)
         std::make_shared<wait_for_nighttime_action>()
     };
 
-    gheuristic heuristic;
+    const goal_count_heuristic heuristic;
     idaplanner planner;
 
-    auto result = planner.plan(initial, goal, actions, heuristic);
+    const auto result = planner.plan(initial, goal, actions, heuristic);
 
     print_plan(result);
 

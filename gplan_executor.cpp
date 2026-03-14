@@ -4,16 +4,16 @@
 
 #include "gplan_executor.h"
 
-void gplan_executor::set_plan(gplan_result plan)
+void gplan_executor::set_plan(gplan_result plan, gworld_model goal)
 {
-    if (is_running())
-    {
-        interrupt();
-    }
+    if (is_running()) interrupt();
 
     current_plan = std::move(plan);
+    goal_state = std::move(goal);
+
     current_action_index = 0;
     current_action = nullptr;
+
     action_started = false;
     status = current_plan.success() ? execution_status::Running : execution_status::Failed;
 }
@@ -76,13 +76,38 @@ execution_result gplan_executor::tick(const float delta_time)
         action_started = true;
     }
 
-    current_action->on_tick(delta_time);
+    const action_status tick_status = current_action->on_tick(delta_time);
+    if (tick_status == action_status::Running)
+    {
+        result.status = status;
+        result.current_action_index = current_action_index;
+        return result;
+    }
+    else if (tick_status == action_status::Failed)
+    {
+        end_current_action(false);
+        current_action = nullptr;
+        action_started = false;
 
-    // temporary
+        status = execution_status::NeedReplanning;
+        result.status = status;
+        result.failure_reason = "Action failed: " + current_plan.actions[current_action_index]->get_name();
+
+        if (auto_replan && attempt_replan())
+        {
+            result.status = execution_status::Running;
+            return tick(delta_time);
+        }
+
+        status = execution_status::Failed;
+        result.status = status;
+        return result;
+    }
+
     end_current_action(true);
     current_action = nullptr;
     action_started = false;
-    current_action_index++;
+    ++current_action_index;
 
     result.current_action_index = current_action_index;
     result.status = status;
@@ -106,27 +131,21 @@ void gplan_executor::reset()
 {
     interrupt();
     current_plan = gplan_result{};
+    goal_state = gworld_model{};
     current_action_index = 0;
-    status = execution_status::Success;
+    status = execution_status::Idle;
 }
 
 bool gplan_executor::start_current_action() const
 {
-    if (!current_action) return false;
-
-    const bool started = current_action->on_start();
-    return started;
+    return current_action && current_action->on_start();
 }
 
 void gplan_executor::end_current_action(const bool success) const
 {
     if (!current_action) return;
 
-    if (success && world_model)
-    {
-        current_action->apply_effects(*world_model);
-    }
-
+    if (success && world_model) current_action->apply_effects(*world_model);
     current_action->on_end(success);
 }
 
@@ -140,9 +159,10 @@ bool gplan_executor::attempt_replan()
 {
     if (!on_replan_needed || !world_model) return false;
 
-    if (gplan_result new_plan = on_replan_needed(*world_model); new_plan.success())
+    if (gplan_result new_plan = on_replan_needed(*world_model, goal_state); new_plan.success())
     {
-        set_plan(std::move(new_plan));
+        const gworld_model saved_goal = goal_state;
+        set_plan(std::move(new_plan), saved_goal);
         status = execution_status::Running;
         return true;
     }

@@ -12,6 +12,7 @@
 
 enum class execution_status
 {
+    Idle,
     Running,
     Success,
     Failed,
@@ -21,7 +22,7 @@ enum class execution_status
 
 struct execution_result
 {
-    execution_status status = execution_status::Running;
+    execution_status status = execution_status::Idle;
     size_t current_action_index = 0;
     std::string failure_reason;
 };
@@ -29,13 +30,15 @@ struct execution_result
 class gplan_executor
 {
 public:
-    using replan_callback = std::function<gplan_result(const gworld_model&)>;
+    using replan_callback = std::function<gplan_result(const gworld_model& current_world, const gworld_model& goal)>;
 
 private:
     gplan_result current_plan;
+    gworld_model goal_state;
+
     size_t current_action_index = 0;
-    std::shared_ptr<gaction> current_action;
-    execution_status status = execution_status::Running;
+    gaction::ptr current_action;
+    execution_status status = execution_status::Idle;
 
     replan_callback on_replan_needed;
     gworld_model* world_model = nullptr;
@@ -46,7 +49,7 @@ private:
 public:
     explicit gplan_executor(gworld_model* world = nullptr) : world_model(world) {}
 
-    void set_plan(gplan_result plan);
+    void set_plan(gplan_result plan, gworld_model goal);
     void set_world_model(gworld_model* world) { world_model = world;}
     void set_replan_callback(replan_callback callback) { on_replan_needed = std::move(callback); }
     void set_auto_replan(const bool enable) { auto_replan = enable; }
