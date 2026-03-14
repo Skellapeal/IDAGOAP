@@ -32,7 +32,7 @@ class craft_tool_action : public goap_action
 public:
     craft_tool_action() : goap_action("CraftTool", 5)
     {
-        add_precondition("has_wood", gvalue{1}, gcomparison::Equal);
+        add_precondition("has_wood", state_value{1}, predicate_op::Equal);
 
         add_effect("has_tool", 1);
         add_effect("has_wood", 0);
@@ -63,8 +63,8 @@ class build_shelter_action : public goap_action
 public:
     build_shelter_action() : goap_action("BuildShelter", 20)
     {
-        add_precondition("has_wood", gvalue{1}, gcomparison::Equal);
-        add_precondition("has_stone", gvalue{1}, gcomparison::Equal);
+        add_precondition("has_wood", state_value{1}, predicate_op::Equal);
+        add_precondition("has_stone", state_value{1}, predicate_op::Equal);
 
         add_effect("has_shelter", 1);
         add_effect("has_wood", 0);
@@ -101,7 +101,7 @@ class hide_action : public goap_action
 public:
     hide_action() : goap_action("Hide", 3)
     {
-        add_precondition("enemy_visible", gvalue{true}, gcomparison::Equal);
+        add_precondition("enemy_visible", state_value{true}, predicate_op::Equal);
 
         add_effect("is_hidden", true);
         add_effect("enemy_visible", false);
@@ -113,7 +113,7 @@ class rest_action : public goap_action
 public:
     rest_action() : goap_action("Rest", 12)
     {
-        add_precondition("health", gvalue{30.0f}, gcomparison::LessOrEqual);
+        add_precondition("health", state_value{30.0f}, predicate_op::LessOrEqual);
         add_effect("health", 100.0f);
     }
 };
@@ -123,7 +123,7 @@ class take_damage_action : public goap_action
 public:
     take_damage_action() : goap_action("TakeDamage", 1)
     {
-        add_precondition("health", gvalue{100.0f}, gcomparison::Equal);
+        add_precondition("health", state_value{100.0f}, predicate_op::Equal);
         add_effect("health", 30.0f);
     }
 };
@@ -142,7 +142,7 @@ class deep_action_2 : public goap_action
 public:
     deep_action_2() : goap_action("DeepAction2", 1)
     {
-        add_precondition("depth_1", gvalue{1}, gcomparison::Equal);
+        add_precondition("depth_1", state_value{1}, predicate_op::Equal);
         add_effect("depth_2", 1);
     }
 };
@@ -152,7 +152,7 @@ class deep_action_3 : public goap_action
 public:
     deep_action_3() : goap_action("DeepAction3", 1)
     {
-        add_precondition("depth_2", gvalue{1}, gcomparison::Equal);
+        add_precondition("depth_2", state_value{1}, predicate_op::Equal);
         add_effect("depth_3", 1);
     }
 };
@@ -162,7 +162,7 @@ class deep_action_4 : public goap_action
 public:
     deep_action_4() : goap_action("DeepAction4", 1)
     {
-        add_precondition("depth_3", gvalue{1}, gcomparison::Equal);
+        add_precondition("depth_3", state_value{1}, predicate_op::Equal);
         add_effect("depth_4", 1);;
     }
 };
@@ -172,7 +172,7 @@ class deep_action_5 : public goap_action
 public:
     deep_action_5() : goap_action("DeepAction5", 1)
     {
-        add_precondition("depth_4", gvalue{1}, gcomparison::Equal);
+        add_precondition("depth_4", state_value{1}, predicate_op::Equal);
         add_effect("depth_5", 1);
     }
 };
@@ -192,7 +192,7 @@ class cross_spike_trap_action : public goap_action
 public:
     cross_spike_trap_action() : goap_action("CrossSpikeTrap", 15)
     {
-        add_precondition("at_entrance", gvalue{true}, gcomparison::Equal);
+        add_precondition("at_entrance", state_value{true}, predicate_op::Equal);
 
         add_effect("at_entrance", false);
         add_effect("at_medpack_room", true);
@@ -210,8 +210,8 @@ class pickup_medpack_action : public goap_action
 public:
     pickup_medpack_action() : goap_action("PickupMedpack", 3)
     {
-        add_precondition("at_medpack_room", gvalue{true},gcomparison::Equal);
-        add_precondition("has_medpack", gvalue{false},gcomparison::Equal);
+        add_precondition("at_medpack_room", state_value{true},predicate_op::Equal);
+        add_precondition("has_medpack", state_value{false},predicate_op::Equal);
 
         add_effect("has_medpack", true);
     }
@@ -227,7 +227,7 @@ class use_medpack_action : public goap_action
 public:
     use_medpack_action() : goap_action("UseMedpack", 5)
     {
-        add_precondition("has_medpack", gvalue{true},gcomparison::Equal);
+        add_precondition("has_medpack", state_value{true},predicate_op::Equal);
 
         add_effect("health", 100.0f);
         add_effect("has_medpack", false);
@@ -244,7 +244,7 @@ class retreat_to_entrance_action : public goap_action
 public:
     retreat_to_entrance_action() : goap_action("RetreatToEntrance", 20)
     {
-        add_precondition("at_medpack_room", gvalue{true}, gcomparison::Equal);
+        add_precondition("at_medpack_room", state_value{true}, predicate_op::Equal);
 
         add_effect("at_entrance", true);
         add_effect("at_medpack_room", false);
@@ -261,7 +261,7 @@ class use_bandage_action : public goap_action
 public:
     use_bandage_action() : goap_action("UseBandage", 3)
     {
-        add_precondition("has_bandage", gvalue{true}, gcomparison::Equal);
+        add_precondition("has_bandage", state_value{true}, predicate_op::Equal);
 
         add_effect("health", 50.0f);
         add_effect("has_bandage", false);

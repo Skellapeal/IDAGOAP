@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 16/02/2026.
 //
 
-#ifndef IDAGOAP_GWORLD_MODEL_H
-#define IDAGOAP_GWORLD_MODEL_H
+#ifndef IDAGOAP_WORLD_STATE_H
+#define IDAGOAP_WORLD_STATE_H
 #include <algorithm>
 #include <optional>
 #include <ranges>
@@ -13,30 +13,30 @@
 
 class world_state
 {
-    std::unordered_map<std::string, gvalue> states;
+    std::unordered_map<std::string, state_value> states;
 
 public:
-    void set_state(const std::string& key, gvalue value);
-    [[nodiscard]] std::optional<gvalue> get_state(const std::string& key) const;
+    void set_state(const std::string& key, state_value value);
+    [[nodiscard]] std::optional<state_value> get_state(const std::string& key) const;
 
     [[nodiscard]] bool has_state(const std::string& key) const;
     void remove_state(const std::string& key);
 
-    [[nodiscard]] const std::unordered_map<std::string, gvalue>& get_states() const;
+    [[nodiscard]] const std::unordered_map<std::string, state_value>& get_states() const;
 
-    void set_int(const std::string& key, int value) { set_state(key, gvalue{value}); }
+    void set_int(const std::string& key, int value) { set_state(key, state_value{value}); }
     [[nodiscard]] std::optional<int> get_int(const std::string& key) const;
 
-    void set_bool(const std::string& key, bool value) { set_state(key, gvalue{value}); }
+    void set_bool(const std::string& key, bool value) { set_state(key, state_value{value}); }
     [[nodiscard]] std::optional<bool> get_bool(const std::string& key) const;
 
-    void set_float(const std::string& key, float value) { set_state(key, gvalue{value}); }
+    void set_float(const std::string& key, float value) { set_state(key, state_value{value}); }
     [[nodiscard]]std::optional<float> get_float(const std::string &key) const;
 
-    void set_string(const std::string& key, std::string value) { set_state(key, gvalue{ std::move(value) }); }
+    void set_string(const std::string& key, std::string value) { set_state(key, state_value{ std::move(value) }); }
     [[nodiscard]] std::optional<std::string> get_string(const std::string& key) const;
 
-    void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, gvalue{std::vector{x, y, z}}); }
+    void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, state_value{std::vector{x, y, z}}); }
     [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
 
     void merge(const world_state& other);
@@ -56,14 +56,14 @@ struct std::hash<world_state>
         std::vector<std::string_view> keys;
         keys.reserve(raw.size());
 
-        for (const auto &k: raw | views::keys)
+        for (const auto &key: raw | views::keys)
         {
-            keys.emplace_back(k);
+            keys.emplace_back(key);
         }
         ranges::sort(keys);
 
         size_t seed = 0;
-        constexpr std::hash<gvalue> value_hasher;
+        constexpr std::hash<state_value> value_hasher;
 
         for (const auto& key : keys)
         {
@@ -76,4 +76,4 @@ struct std::hash<world_state>
         return seed;
     }
 };
-#endif //IDAGOAP_GWORLD_MODEL_H
+#endif //IDAGOAP_WORLD_STATE_H

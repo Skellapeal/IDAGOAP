@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 04/03/2026.
 //
 
-#ifndef IDAGOAP_GPLAN_RESULT_H
-#define IDAGOAP_GPLAN_RESULT_H
+#ifndef IDAGOAP_PLAN_RESULT_H
+#define IDAGOAP_PLAN_RESULT_H
 #include <string>
 #include <vector>
 #include <memory>
@@ -35,4 +35,4 @@ struct plan_result
     [[nodiscard]] std::string status_string() const;
 };
 
-#endif //IDAGOAP_GPLAN_RESULT_H
+#endif //IDAGOAP_PLAN_RESULT_H

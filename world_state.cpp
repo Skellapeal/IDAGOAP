@@ -5,9 +5,9 @@
 #include "world_state.h"
 
 bool world_state::operator==(const world_state& other) const { return states == other.states; }
-void world_state::set_state(const std::string &key, gvalue value) { states[key] = std::move(value); }
+void world_state::set_state(const std::string &key, state_value value) { states[key] = std::move(value); }
 
-std::optional<gvalue> world_state::get_state(const std::string &key) const
+std::optional<state_value> world_state::get_state(const std::string &key) const
 {
     if (const auto it = states.find(key); it != states.end())
     {
@@ -18,7 +18,7 @@ std::optional<gvalue> world_state::get_state(const std::string &key) const
 
 bool world_state::has_state(const std::string& key) const { return states.contains(key); }
 void world_state::remove_state(const std::string &key) { states.erase(key); }
-const std::unordered_map<std::string, gvalue> & world_state::get_states() const { return states; }
+const std::unordered_map<std::string, state_value> & world_state::get_states() const { return states; }
 
 std::optional<int> world_state::get_int(const std::string &key) const
 {
@@ -91,7 +91,7 @@ void world_state::merge(const world_state &other)
 bool world_state::satisfies(const world_state &goal) const
 {
     return !std::ranges::any_of(goal.get_states(),
-        [&](const std::pair<const std::string, gvalue>& goal_state)
+        [&](const std::pair<const std::string, state_value>& goal_state)
         {
             const auto& [key, value] = goal_state;
             const auto start_value = get_state(key);

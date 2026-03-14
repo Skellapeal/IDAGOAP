@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 16/02/2026.
 //
 
-#ifndef IDAGOAP_GACTION_H
-#define IDAGOAP_GACTION_H
+#ifndef IDAGOAP_GOAP_ACTION_H
+#define IDAGOAP_GOAP_ACTION_H
 
 #include <memory>
 #include <string>
@@ -26,8 +26,8 @@ protected:
     std::string name;
     int cost = 0;
 
-    std::unordered_map<std::string, gcondition> preconditions;
-    std::unordered_map<std::string, gvalue> effects;
+    std::unordered_map<std::string, state_condition> preconditions;
+    std::unordered_map<std::string, state_value> effects;
 
 public:
     using ptr = std::shared_ptr<goap_action>;
@@ -39,15 +39,15 @@ public:
 
     [[nodiscard]] const std::string& get_name() const { return name; }
     [[nodiscard]] int get_cost() const { return cost; }
-    [[nodiscard]] const std::unordered_map<std::string, gcondition>& get_preconditions() const { return preconditions; }
-    [[nodiscard]] const std::unordered_map<std::string, gvalue>& get_effects() const { return effects; }
+    [[nodiscard]] const std::unordered_map<std::string, state_condition>& get_preconditions() const { return preconditions; }
+    [[nodiscard]] const std::unordered_map<std::string, state_value>& get_effects() const { return effects; }
 
-    void add_precondition(const std::string& key, const gvalue& value, const gcomparison comparison = gcomparison::Equal)
+    void add_precondition(const std::string& key, const state_value& value, const predicate_op comparison = predicate_op::Equal)
     {
-        preconditions[key] = gcondition(value, comparison);
+        preconditions[key] = state_condition(value, comparison);
     }
 
-    void add_effect(const std::string& key, const gvalue& value)
+    void add_effect(const std::string& key, const state_value& value)
     {
         effects[key] = value;
     }
@@ -78,4 +78,4 @@ public:
     virtual void on_interrupt() {}
 };
 
-#endif //IDAGOAP_GACTION_H
+#endif //IDAGOAP_GOAP_ACTION_H

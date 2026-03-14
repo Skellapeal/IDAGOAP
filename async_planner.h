@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 08/03/2026.
 //
 
-#ifndef IDAGOAP_GASYNC_PLANNER_H
-#define IDAGOAP_GASYNC_PLANNER_H
+#ifndef IDAGOAP_ASYNC_PLANNER_H
+#define IDAGOAP_ASYNC_PLANNER_H
 
 #include <future>
 #include <atomic>
@@ -28,14 +28,14 @@ public:
         const world_state &initial_state,
         const world_state &goal_state,
         std::vector<goap_action::ptr> available_actions,
-        std::shared_ptr<heurisitc> heuristic,
+        std::shared_ptr<heuristic> heuristic,
         const planner_options &options = planner_options{});
 
     void plan_async(
         const world_state &initial_state,
         const world_state &goal_state,
         std::vector<goap_action::ptr> available_actions,
-        std::shared_ptr<heurisitc> heuristic,
+        std::shared_ptr<heuristic> heuristic,
         completion_callback callback,
         const planner_options &options = planner_options{});
 
@@ -51,4 +51,4 @@ public:
     }
 };
 
-#endif //IDAGOAP_GASYNC_PLANNER_H
+#endif //IDAGOAP_ASYNC_PLANNER_H

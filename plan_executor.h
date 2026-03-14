@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 07/03/2026.
 //
 
-#ifndef IDAGOAP_GPLAN_EXECUTOR_H
-#define IDAGOAP_GPLAN_EXECUTOR_H
+#ifndef IDAGOAP_PLAN_EXECUTOR_H
+#define IDAGOAP_PLAN_EXECUTOR_H
 
 #include <memory>
 #include <functional>
@@ -73,4 +73,4 @@ private:
 };
 
 
-#endif //IDAGOAP_GPLAN_EXECUTOR_H
+#endif //IDAGOAP_PLAN_EXECUTOR_H

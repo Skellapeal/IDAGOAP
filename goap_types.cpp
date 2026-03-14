@@ -5,7 +5,7 @@
 #include "goap_types.h"
 #include "world_state.h"
 
-bool gcondition::evaluate(const world_state& world_model, const std::string& key) const
+bool state_condition::evaluate(const world_state& world_model, const std::string& key) const
 {
     const auto world_value = world_model.get_state(key);
     if (!world_value) return false;
@@ -19,5 +19,5 @@ bool gcondition::evaluate(const world_state& world_model, const std::string& key
             return compare(*world_val, cond_value);
         }
         return false;
-    }, value);
+    }, s_value);
 }

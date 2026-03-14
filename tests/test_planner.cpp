@@ -350,17 +350,17 @@ TEST(test_bool_preconditions_and_effects)
 
 TEST(test_float_equality_in_variant)
 {
-    gvalue f1{30.0f};
-    gvalue f2{30.0f};
-    gvalue f3{30.1f};
+    state_value f1{30.0f};
+    state_value f2{30.0f};
+    state_value f3{30.1f};
 
     assert(f1 == f2);
     assert(f1 != f3);
 
-    gvalue f4{30.0f};
-    gvalue f5{30.0f + 1e-7f};
+    state_value f4{30.0f};
+    state_value f5{30.0f + 1e-7f};
 
-    auto get_float = [](const gvalue& v) -> float
+    auto get_float = [](const state_value& v) -> float
     {
         return std::get<float>(v);
     };
@@ -368,16 +368,16 @@ TEST(test_float_equality_in_variant)
     constexpr float epsilon = 1e-6f;
     assert(std::abs(get_float(f4) - get_float(f5)) <= epsilon);
 
-    std::unordered_map<std::string, gvalue> map1;
-    map1["health"] = gvalue{100.0f};
+    std::unordered_map<std::string, state_value> map1;
+    map1["health"] = state_value{100.0f};
 
-    std::unordered_map<std::string, gvalue> map2;
-    map2["health"] = gvalue{100.0f};
+    std::unordered_map<std::string, state_value> map2;
+    map2["health"] = state_value{100.0f};
 
     assert(map1.at("health") == map2.at("health"));
 
-    std::unordered_map<std::string, gvalue> map3;
-    map3["health"] = gvalue{100.0f + 1e-7f};
+    std::unordered_map<std::string, state_value> map3;
+    map3["health"] = state_value{100.0f + 1e-7f};
 
     assert(std::abs(get_float(map1.at("health")) - get_float(map3.at("health"))) <= epsilon);
 }
@@ -385,7 +385,7 @@ TEST(test_float_equality_in_variant)
 TEST(test_is_action_relevant_debug)
 {
     world_state goal;
-    goal.set_state("health", gvalue{100.0f});
+    goal.set_state("health", state_value{100.0f});
 
     const auto rest = std::make_shared<rest_action>(); // no const here
 
@@ -619,8 +619,8 @@ TEST(test_precondition_conflict_detected)
     public:
         use_antidote_daytime_action() : goap_action("UseAntidoteDaytime", 5)
         {
-            add_precondition("has_antidote", gvalue{true}, gcomparison::Equal);
-            add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
+            add_precondition("has_antidote", state_value{true}, predicate_op::Equal);
+            add_precondition("is_nighttime", state_value{false}, predicate_op::Equal);
 
             add_effect("is_cured", true);
             add_effect("has_antidote", false);
@@ -632,7 +632,7 @@ TEST(test_precondition_conflict_detected)
     public:
         wait_for_day_action() : goap_action("WaitForDay", 10)
         {
-            add_precondition("is_nighttime", gvalue{true}, gcomparison::Equal);
+            add_precondition("is_nighttime", state_value{true}, predicate_op::Equal);
             add_effect("is_nighttime", false);
         }
     };
@@ -675,8 +675,8 @@ TEST(test_precondition_conflict_resolved)
     public:
         use_antidote_daytime_action() : goap_action("UseAntidoteDaytime", 5)
         {
-            add_precondition("has_antidote", gvalue{true}, gcomparison::Equal);
-            add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
+            add_precondition("has_antidote", state_value{true}, predicate_op::Equal);
+            add_precondition("is_nighttime", state_value{false}, predicate_op::Equal);
 
             add_effect("is_cured", true);
             add_effect("has_antidote", false);
@@ -688,7 +688,7 @@ TEST(test_precondition_conflict_resolved)
     public:
         wait_for_day_action() : goap_action("WaitForDay", 10)
         {
-            add_precondition("is_nighttime", gvalue{true}, gcomparison::Equal);
+            add_precondition("is_nighttime", state_value{true}, predicate_op::Equal);
             add_effect("is_nighttime", false);
         }
     };
@@ -698,7 +698,7 @@ TEST(test_precondition_conflict_resolved)
     public:
         wait_for_nighttime_action() : goap_action("WaitForNighttime", 10)
         {
-            add_precondition("is_nighttime", gvalue{false}, gcomparison::Equal);
+            add_precondition("is_nighttime", state_value{false}, predicate_op::Equal);
             add_effect("is_nighttime", true);
         }
     };

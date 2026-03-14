@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 03/03/2026.
 //
 
-#ifndef IDAGOAP_GTYPES_H
-#define IDAGOAP_GTYPES_H
+#ifndef IDAGOAP_GOAP_TYPES_H
+#define IDAGOAP_GOAP_TYPES_H
 
 #include <cassert>
 #include <string>
@@ -13,7 +13,7 @@
 
 class world_state;
 
-enum class gcomparison
+enum class predicate_op
 {
     Equal,
     NotEqual,
@@ -23,17 +23,17 @@ enum class gcomparison
     GreaterOrEqual
 };
 
-using gvalue = std::variant<int, bool, float, std::string, std::vector<float>>;
+using state_value = std::variant<int, bool, float, std::string, std::vector<float>>;
 
-struct gcondition
+struct state_condition
 {
-    gvalue value;
-    gcomparison comparison = gcomparison::Equal;
+    state_value s_value;
+    predicate_op predicate = predicate_op::Equal;
 
-    gcondition() = default;
+    state_condition() = default;
 
-    explicit gcondition(gvalue value, const gcomparison comparison = gcomparison::Equal)
-    : value(std::move(value)), comparison(comparison) {}
+    explicit state_condition(state_value value, const predicate_op comparison = predicate_op::Equal)
+    : s_value(std::move(value)), predicate(comparison) {}
 
     [[nodiscard]] bool evaluate(const world_state &world_model, const std::string &key) const;
 
@@ -46,29 +46,29 @@ private:
             std::is_same_v<T, std::string> ||
             std::is_same_v<T, std::vector<float>>)
         {
-            if (comparison != gcomparison::Equal && comparison != gcomparison::NotEqual)
+            if (predicate != predicate_op::Equal && predicate != predicate_op::NotEqual)
             {
                 return false;
             }
         }
 
-        switch (comparison)
+        switch (predicate)
         {
-            case gcomparison::Equal:            return lhs == rhs;
-            case gcomparison::NotEqual:         return lhs != rhs;
-            case gcomparison::Less:             return lhs < rhs;
-            case gcomparison::LessOrEqual:      return lhs <= rhs;
-            case gcomparison::Greater:          return lhs > rhs;
-            case gcomparison::GreaterOrEqual:   return lhs >= rhs;
-            default:                            return false;
+            case predicate_op::Equal:            return lhs == rhs;
+            case predicate_op::NotEqual:         return lhs != rhs;
+            case predicate_op::Less:             return lhs < rhs;
+            case predicate_op::LessOrEqual:      return lhs <= rhs;
+            case predicate_op::Greater:          return lhs > rhs;
+            case predicate_op::GreaterOrEqual:   return lhs >= rhs;
+            default:                             return false;
         }
     }
 };
 
 template<>
-struct std::hash<gvalue>
+struct std::hash<state_value>
 {
-    std::size_t operator()(const gvalue& value) const noexcept
+    std::size_t operator()(const state_value& value) const noexcept
     {
         return std::visit([]<typename ValueType>(const ValueType& held_value) -> size_t
         {
@@ -91,4 +91,4 @@ struct std::hash<gvalue>
     }
 };
 
-#endif //IDAGOAP_GTYPES_H
+#endif //IDAGOAP_GOAP_TYPES_H

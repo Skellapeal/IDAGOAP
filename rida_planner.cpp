@@ -15,7 +15,7 @@ bool rida_planner::is_action_relevant(const goap_action::const_ptr& action, cons
     const auto& effects = action->get_effects();
 
     const bool relevant = std::ranges::any_of(current_goal.get_states(),
-        [&effects](const std::pair<const std::string, gvalue>& goal_entry)
+        [&effects](const std::pair<const std::string, state_value>& goal_entry)
     {
         const auto& [key, goal_value] = goal_entry;
         const bool contains = effects.contains(key);
@@ -33,16 +33,16 @@ bool rida_planner::has_precondition_conflict(const goap_action::const_ptr& actio
     const auto& effects = action->get_effects();
 
     return std::ranges::any_of(action->get_preconditions(),
-        [&current_goal, &effects](const std::pair<const std::string, gcondition>& precondition_entry)
+        [&current_goal, &effects](const std::pair<const std::string, state_condition>& precondition_entry)
         {
             const auto& [precondition_key, precondition_condition] = precondition_entry;
 
             if (effects.contains(precondition_key)) return false;
-            if (precondition_condition.comparison != gcomparison::Equal) return false;
+            if (precondition_condition.predicate != predicate_op::Equal) return false;
 
             if (const auto existing_value = current_goal.get_state(precondition_key))
             {
-                return *existing_value != precondition_condition.value;
+                return *existing_value != precondition_condition.s_value;
             }
             return false;
         }
@@ -58,7 +58,7 @@ bool rida_planner::regressive_ida_search(
     world_state& current_goal,
     const world_state& initial_state,
     const std::span<goap_action::const_ptr> available_actions,
-    const heurisitc &heuristic,
+    const heuristic &heuristic,
     const int accumulated_cost, const int cost_limit, int& next_cost_limit,
     std::vector<goap_action::const_ptr>& plan,
     const int depth)
@@ -127,21 +127,21 @@ bool rida_planner::regressive_ida_search(
             current_goal.remove_state(key);
         }
 
-        auto is_regressable = [](const gcomparison comparison) -> bool
+        auto is_regressable = [](const predicate_op comparison) -> bool
         {
-            return comparison == gcomparison::Equal || comparison == gcomparison::NotEqual;
+            return comparison == predicate_op::Equal || comparison == predicate_op::NotEqual;
         };
 
         bool non_regressable_precondition = false;
         for (const auto& [key, condition] : action->get_preconditions())
         {
-            if (condition.comparison == gcomparison::Equal)
+            if (condition.predicate == predicate_op::Equal)
             {
-                current_goal.set_state(key, condition.value);
+                current_goal.set_state(key, condition.s_value);
             }
             else
             {
-                if (!is_regressable(condition.comparison))
+                if (!is_regressable(condition.predicate))
                 {
                     non_regressable_precondition = true;
                     break;
@@ -179,7 +179,7 @@ plan_result rida_planner::plan(
     const world_state &initial_state,
     const world_state &goal_state,
     const std::span<goap_action::ptr> available_actions,
-    const heurisitc &heuristic,
+    const heuristic &heuristic,
     const planner_options &options)
 {
     plan_result result;

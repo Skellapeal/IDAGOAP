@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 16/02/2026.
 //
 
-#ifndef IDAGOAP_GMOTIVE_H
-#define IDAGOAP_GMOTIVE_H
+#ifndef IDAGOAP_MOTIVE_H
+#define IDAGOAP_MOTIVE_H
 #include "world_state.h"
 
 
@@ -21,4 +21,4 @@ public:
 };
 
 
-#endif //IDAGOAP_GMOTIVE_H
+#endif //IDAGOAP_MOTIVE_H

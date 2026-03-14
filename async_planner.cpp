@@ -8,7 +8,7 @@ void async_planner::plan_async(
     const world_state& initial_state,
     const world_state& goal_state,
     std::vector<goap_action::ptr> available_actions,
-    std::shared_ptr<heurisitc> heuristic,
+    std::shared_ptr<heuristic> heuristic,
     const planner_options& options)
 {
     if (is_planning.load()) cancel_planning();
@@ -39,7 +39,7 @@ void async_planner::plan_async(
     const world_state& initial_state,
     const world_state& goal_state,
     std::vector<goap_action::ptr> available_actions,
-    std::shared_ptr<heurisitc> heuristic,
+    std::shared_ptr<heuristic> heuristic,
     completion_callback callback,
     const planner_options& options)
 {

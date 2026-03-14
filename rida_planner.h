@@ -2,8 +2,8 @@
 // Created by Niall Ó Colmáin on 16/02/2026.
 //
 
-#ifndef IDAGOAP_IDAPLANNER_H
-#define IDAGOAP_IDAPLANNER_H
+#ifndef IDAGOAP_RIDA_PLANNER_H
+#define IDAGOAP_RIDA_PLANNER_H
 
 #include <chrono>
 #include <limits>
@@ -11,7 +11,7 @@
 #include <vector>
 #include <memory>
 #include "goap_action.h"
-#include "heurisitc.h"
+#include "heuristic.h"
 #include "transposition_table.h"
 #include "plan_result.h"
 
@@ -37,7 +37,7 @@ class rida_planner
         world_state &current_goal,
         const world_state &initial_state,
         std::span<goap_action::const_ptr> available_actions,
-        const heurisitc &heuristic,
+        const heuristic &heuristic,
         int accumulated_cost, int cost_limit, int &next_cost_limit,
         std::vector<goap_action::const_ptr> &plan,
         int depth = 0);
@@ -51,18 +51,18 @@ public:
         const world_state &initial_state,
         const world_state &goal_state,
         std::span<goap_action::ptr> available_actions,
-        const heurisitc &heuristic,
+        const heuristic &heuristic,
         const planner_options &options);
 
     [[nodiscard]] plan_result plan(
         const world_state &initial_state,
         const world_state &goal_state,
         const std::span<goap_action::ptr> available_actions,
-        const heurisitc &heuristic)
+        const heuristic &heuristic)
     {
         constexpr planner_options default_options;
         return plan(initial_state, goal_state, available_actions, heuristic, default_options);
     }
 };
 
-#endif //IDAGOAP_IDAPLANNER_H
+#endif //IDAGOAP_RIDA_PLANNER_H

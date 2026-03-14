@@ -2,17 +2,17 @@
 // Created by Niall Ó Colmáin on 08/03/2026.
 //
 
-#ifndef IDAGOAP_GHEURISTIC_LIBRARY_H
-#define IDAGOAP_GHEURISTIC_LIBRARY_H
+#ifndef IDAGOAP_HEURISTICS_H
+#define IDAGOAP_HEURISTICS_H
 
-#include "heurisitc.h"
+#include "heuristic.h"
 #include <cmath>
 #include <memory>
 
 ///@brief
 /// Uses dijkstra's heuristic (0). Correct but potentially slow
 /// use for testing or only when no better heuristic is available.
-class zero_heuristic : public heurisitc
+class zero_heuristic : public heuristic
 {
 public:
     [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
@@ -24,7 +24,7 @@ public:
 ///@brief
 /// Counts unsatisfied goals by the world model.
 /// This is the standard heuristic for GOAP
-class goal_count_heuristic : public heurisitc
+class goal_count_heuristic : public heuristic
 {
 public:
     [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
@@ -53,7 +53,7 @@ public:
 /// Euclidean distance between world and goal positions.
 /// Only meaningful for position navigation.
 /// Defaults to 0 if either world or goal lacks position key
-class euclidean_heuristic : public heurisitc
+class euclidean_heuristic : public heuristic
 {
     std::string position_key;
 
@@ -85,7 +85,7 @@ public:
 ///@brief
 /// Manhattan distance between world and goal positions.
 /// Ideal for grid-based movement without diagonals.
-class manhattan_heuristic : public heurisitc
+class manhattan_heuristic : public heuristic
 {
     std::string position_key;
 
@@ -115,12 +115,12 @@ public:
 ///@brief
 /// Weighted combination of multiple heuristics.
 /// Weights > 1.0 no longer guarantee optimal routing
-class composite_heuristic : public heurisitc
+class composite_heuristic : public heuristic
 {
-    std::vector<std::pair<std::shared_ptr<heurisitc>, float>> heuristics;
+    std::vector<std::pair<std::shared_ptr<heuristic>, float>> heuristics;
 
 public:
-    void add_heuristic(std::shared_ptr<heurisitc> h, float weight = 1.0f)
+    void add_heuristic(std::shared_ptr<heuristic> h, float weight = 1.0f)
     {
         heuristics.emplace_back(std::move(h), weight);
     }
@@ -138,4 +138,4 @@ public:
     }
 };
 
-#endif //IDAGOAP_GHEURISTIC_LIBRARY_H
+#endif //IDAGOAP_HEURISTICS_H
