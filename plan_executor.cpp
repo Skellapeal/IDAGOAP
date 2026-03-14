@@ -26,7 +26,6 @@ namespace rida_goap
         result.status = status;
         result.current_action_index = current_action_index;
 
-        if (!is_running()) return result;
         if (!world_model)
         {
             status = execution_status::Failed;
@@ -34,6 +33,8 @@ namespace rida_goap
             result.failure_reason = "No world model set";
             return result;
         }
+        
+        if (!is_running()) return result;
 
         if (current_action_index >= current_plan.actions.size())
         {
@@ -103,7 +104,7 @@ namespace rida_goap
             if (auto_replan && attempt_replan())
             {
                 result.status = execution_status::Running;
-                return tick(delta_time);
+                return result;
             }
 
             status = execution_status::Failed;

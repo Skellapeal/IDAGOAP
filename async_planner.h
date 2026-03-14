@@ -26,6 +26,12 @@ namespace rida_goap
         completion_callback on_completed;
 
     public:
+        async_planner() = default;
+        async_planner(const async_planner&) = delete;
+        async_planner& operator=(const async_planner&) = delete;
+        async_planner(async_planner&&) = delete;
+        async_planner& operator=(async_planner&&) = delete;
+
         void plan_async(
             const world_state &initial_state,
             const world_state &goal_state,
