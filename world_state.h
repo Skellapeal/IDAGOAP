@@ -58,11 +58,11 @@ struct std::hash<rida_goap::world_state>
         std::vector<std::string_view> keys;
         keys.reserve(raw.size());
 
-        for (const auto &key: raw | views::keys)
+        for (const auto &key: raw | std::views::keys)
         {
             keys.emplace_back(key);
         }
-        ranges::sort(keys);
+        std::ranges::sort(keys);
 
         size_t seed = 0;
         constexpr std::hash<rida_goap::state_value> value_hasher;

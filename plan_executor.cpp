@@ -63,7 +63,11 @@ namespace rida_goap
                 if (auto_replan && attempt_replan())
                 {
                     result.status = execution_status::Running;
-                    return tick(delta_time);
+                }
+                else
+                {
+                    status = execution_status::Failed;
+                    result.status = status;
                 }
                 return result;
             }
@@ -85,7 +89,8 @@ namespace rida_goap
             result.current_action_index = current_action_index;
             return result;
         }
-        else if (tick_status == action_status::Failed)
+
+        if (tick_status == action_status::Failed)
         {
             end_current_action(false);
             current_action = nullptr;

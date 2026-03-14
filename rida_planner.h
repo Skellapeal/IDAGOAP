@@ -29,7 +29,7 @@ namespace rida_goap
 
     class rida_planner
     {
-        transposition_table transposition_table;
+        transposition_table transpos_table;
         int64_t nodes_expanded = 0;
         planner_options current_options;
         std::chrono::steady_clock::time_point start_time;
@@ -62,7 +62,7 @@ namespace rida_goap
             const std::span<goap_action::ptr> available_actions,
             const heuristic &heuristic)
         {
-            constexpr planner_options default_options;
+            const planner_options default_options;
             return plan(initial_state, goal_state, available_actions, heuristic, default_options);
         }
     };

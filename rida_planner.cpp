@@ -99,7 +99,7 @@ namespace rida_goap
 
         if (current_options.use_transposition_table)
         {
-            if (const auto cached_cost = transposition_table.lookup(current_goal))
+            if (const auto cached_cost = transpos_table.lookup(current_goal))
             {
                 if (*cached_cost <= total_cost)
                 {
@@ -171,7 +171,7 @@ namespace rida_goap
 
         if (current_options.use_transposition_table)
         {
-            transposition_table.store(current_goal, total_cost);
+            transpos_table.store(current_goal, total_cost);
         }
 
         return false;
@@ -190,7 +190,7 @@ namespace rida_goap
         failure_reason = plan_status::Success;
         start_time = std::chrono::steady_clock::now();
 
-        transposition_table.set_max_size(current_options.max_transposition_size);
+        transpos_table.set_max_size(current_options.max_transposition_size);
 
         std::vector<goap_action::const_ptr> usable_actions;
         usable_actions.reserve(available_actions.size());
@@ -230,7 +230,7 @@ namespace rida_goap
 
         while (true)
         {
-            transposition_table.clear();
+            transpos_table.clear();
             int next_bound = std::numeric_limits<int>::max();
 
             if (regressive_ida_search(current_goal, initial_state, usable_actions, heuristic,
