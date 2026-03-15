@@ -36,17 +36,21 @@ namespace rida_goap
         using const_ptr = std::shared_ptr<const goap_action>;
 
         goap_action(std::string name, const int cost) : name(std::move(name)), cost(cost) {}
-
         virtual ~goap_action() = default;
+
+        goap_action(const goap_action&) = default;
+        goap_action(goap_action&&) = default;
+        goap_action& operator=(const goap_action&) = default;
+        goap_action& operator=(goap_action&&) = default;
 
         [[nodiscard]] const std::string& get_name() const { return name; }
         [[nodiscard]] int get_cost() const { return cost; }
         [[nodiscard]] const std::unordered_map<std::string, state_condition>& get_preconditions() const { return preconditions; }
         [[nodiscard]] const std::unordered_map<std::string, state_value>& get_effects() const { return effects; }
 
-        void add_precondition(const std::string& key, const state_value& value, const predicate_op comparison = predicate_op::Equal)
+        void add_precondition(const std::string& key, state_value value, const predicate_op comparison = predicate_op::Equal)
         {
-            preconditions[key] = state_condition(value, comparison);
+            preconditions[key] = state_condition(std::move(value), comparison);
         }
 
         void add_effect(const std::string& key, const state_value& value)
@@ -75,10 +79,20 @@ namespace rida_goap
         void apply_effects(world_state& world_model) const;
 
         virtual bool on_start() { return true; }
-        virtual action_status on_tick(float delta_time) { return action_status::Running; }
+        virtual action_status on_tick(float delta_time) = 0;
         virtual void on_end(bool success) {}
         virtual void on_interrupt() {}
     };
-}
+
+    class instant_goap_action : public goap_action
+    {
+    public:
+        instant_goap_action(std::string name, const int cost) : goap_action(std::move(name), cost) {}
+        action_status on_tick(float) final { return execute() ? action_status::Succeeded : action_status::Failed; }
+
+    protected:
+        virtual bool execute() { return true; }
+    };
+} // namespace rida_goap
 
 #endif //IDAGOAP_GOAP_ACTION_H

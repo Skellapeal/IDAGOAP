@@ -51,4 +51,5 @@ namespace rida_goap
         [[nodiscard]] const std::vector<std::shared_ptr<motive>>& get_motives() const { return motives; }
     };
 }
+
 #endif //IDAGOAP_GOAL_SELECTOR_H

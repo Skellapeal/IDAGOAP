@@ -11,7 +11,8 @@
 #include <variant>
 #include "goap_types.h"
 
-namespace rida_goap {
+namespace rida_goap
+{
     class world_state
     {
         std::unordered_map<std::string, state_value> states;
@@ -38,12 +39,14 @@ namespace rida_goap {
         [[nodiscard]] std::optional<std::string> get_string(const std::string& key) const;
 
         void set_position(const std::string& key, const float x, const float y, const float z = 0.0f) { set_state(key, state_value{std::vector{x, y, z}}); }
+        void set_position_2d(const std::string& key, const float x, const float y) { set_state(key, state_value{std::vector{x, y}}); }
         [[nodiscard]] std::optional<std::vector<float>> get_position(const std::string& key) const;
 
         void merge(const world_state& other);
+        void merge_defaults(const world_state& other);
 
-        [[nodiscard]] bool satisfies(const world_state& goal) const;
-
+        [[nodiscard]] bool satisfies(const std::unordered_map<std::string, state_condition> &goal_conditions) const;
+        [[nodiscard]] bool satisfies(const world_state &goal) const;
         [[nodiscard]] bool operator==(const world_state &other) const;
     };
 }
@@ -55,24 +58,23 @@ struct std::hash<rida_goap::world_state>
     {
         const auto& raw = model.get_states();
 
-        std::vector<std::string_view> keys;
-        keys.reserve(raw.size());
+        std::vector<std::pair<std::string_view, const rida_goap::state_value*>> entries;
+        entries.reserve(raw.size());
 
-        for (const auto &key: raw | std::views::keys)
+        for (const auto& [keys, values] : raw)
         {
-            keys.emplace_back(key);
+            entries.emplace_back(keys, &values);
         }
-        std::ranges::sort(keys);
+        std::ranges::sort(entries, {}, &std::pair<std::string_view, const rida_goap::state_value*>::first);
 
         size_t seed = 0;
-        constexpr std::hash<rida_goap::state_value> value_hasher;
+        const std::hash<rida_goap::state_value> value_hasher;
 
-        for (const auto& key : keys)
+        for (const auto& [key, val_ptr] : entries)
         {
-            const size_t key_hash = hash<std::string_view>{}(key);
-            const size_t value_hash = value_hasher(raw.at(std::string(key)));
-
-            seed ^= key_hash + 0x9e3779b9U + (seed << 6) + (seed >> 2);
+            const size_t key_hash   = hash<std::string_view>{}(key);
+            const size_t value_hash = value_hasher(*val_ptr);
+            seed ^= key_hash   + 0x9e3779b9U + (seed << 6) + (seed >> 2);
             seed ^= value_hash + 0x9e3779b9U + (seed << 6) + (seed >> 2);
         }
         return seed;

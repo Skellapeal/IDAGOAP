@@ -17,7 +17,8 @@ namespace rida_goap
         NoSolutionExists,           // No action sequence satisfies the goal
         TimedOut,                   // Time budget elapsed
         DepthLimitReached,          // Hit max depth
-        NodeLimitReached            // Hit max nodes
+        NodeLimitReached,            // Hit max nodes
+        Cancelled
     };
 
     struct plan_result

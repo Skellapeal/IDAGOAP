@@ -91,27 +91,25 @@ TEST(StateCondition, EvaluateTypeMismatchReturnsFalse)
 {
     world_state ws;
     ws.set_int("x", 1);
-    const state_condition cond(state_value{true}, predicate_op::Equal); // bool vs int
+    const state_condition cond(state_value{true}, predicate_op::Equal);
     EXPECT_FALSE(cond.evaluate(ws, "x"));
 }
 
-// --- state_value hash ---
-
 TEST(StateValueHash, SameIntHashesEqual)
 {
-    constexpr std::hash<state_value> h;
+    const std::hash<state_value> h;
     EXPECT_EQ(h(state_value{42}), h(state_value{42}));
 }
 
 TEST(StateValueHash, DifferentIntHashesDiffer)
 {
-    constexpr std::hash<state_value> h;
+    const std::hash<state_value> h;
     EXPECT_NE(h(state_value{1}), h(state_value{2}));
 }
 
 TEST(StateValueHash, VectorFloatHashesDeterministic)
 {
-    constexpr std::hash<state_value> h;
+    const std::hash<state_value> h;
     const state_value a{std::vector{1.0f, 2.0f}};
     const state_value b{std::vector{1.0f, 2.0f}};
     EXPECT_EQ(h(a), h(b));

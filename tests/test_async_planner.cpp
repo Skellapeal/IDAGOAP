@@ -12,9 +12,13 @@ static goap_action::ptr make_simple_action(const std::string& name,
     const std::string& pre_key, bool pre_val,
     const std::string& eff_key, bool eff_val)
 {
-    class sa : public goap_action {
-    public: sa(const std::string& n, const int c) : goap_action(n, c) {}
+    class sa : public goap_action
+    {
+    public:
+        sa(const std::string& n, const int c) : goap_action(n, c) {}
+        action_status on_tick(float) override { return action_status::Succeeded; }
     };
+
     auto a = std::make_shared<sa>(name, 1);
     a->add_precondition(pre_key, state_value{pre_val});
     a->add_effect(eff_key, state_value{eff_val});

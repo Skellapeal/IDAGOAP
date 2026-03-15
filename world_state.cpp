@@ -90,6 +90,24 @@ namespace rida_goap
         }
     }
 
+    void world_state::merge_defaults(const world_state& other)
+    {
+        for (const auto& [key, value] : other.get_states())
+        {
+            if (!has_state(key)) set_state(key, value);
+        }
+    }
+
+    bool world_state::satisfies(const std::unordered_map<std::string, state_condition> &goal_conditions) const
+    {
+        return std::ranges::all_of(goal_conditions,
+                [this](const auto& entry)
+                {
+                    const auto& [key, condition] = entry;
+                    return condition.evaluate(*this, key);
+                });
+    }
+
     bool world_state::satisfies(const world_state &goal) const
     {
         return !std::ranges::any_of(goal.get_states(),

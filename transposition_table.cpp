@@ -6,7 +6,7 @@
 
 namespace rida_goap
 {
-    std::optional<int> transposition_table::lookup(const world_state &state)
+    std::optional<int> transposition_table::lookup(const world_state &state) const
     {
         const auto it = table.find(state);
         if (it == table.end())
@@ -20,6 +20,8 @@ namespace rida_goap
 
     void transposition_table::store(const world_state &state, const int cost)
     {
+        if (max_size == 0) return;
+
         if (const auto it = table.find(state); it != table.end())
         {
             it->second.first = cost;

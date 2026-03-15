@@ -80,7 +80,7 @@ namespace rida_goap
                 distance += diff * diff;
             }
 
-            return static_cast<int>(std::sqrt(distance));
+            return static_cast<int>(std::ceil(std::sqrt(distance)));
         }
     };
 
@@ -119,21 +119,22 @@ namespace rida_goap
     /// Weights > 1.0 no longer guarantee optimal routing
     class composite_heuristic : public heuristic
     {
-        std::vector<std::pair<std::shared_ptr<heuristic>, float>> heuristics;
+        std::vector<std::pair<std::shared_ptr<heuristic>, float>> sub_heuristics;
 
     public:
         void add_heuristic(std::shared_ptr<heuristic> h, float weight = 1.0f)
         {
-            heuristics.emplace_back(std::move(h), weight);
+            sub_heuristics.emplace_back(std::move(h), weight);
         }
 
         [[nodiscard]] int estimate(const world_state& world_model, const world_state& goal) const override
         {
+            if (sub_heuristics.empty()) return 0;
             float total = 0.0f;
 
-            for (const auto& [heuristic, weight] : heuristics)
+            for (const auto& [h, weight] : sub_heuristics)
             {
-                total += weight * static_cast<float>(heuristic->estimate(world_model, goal));
+                total += weight * static_cast<float>(h->estimate(world_model, goal));
             }
 
             return static_cast<int>(total);

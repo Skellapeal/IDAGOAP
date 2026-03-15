@@ -8,6 +8,7 @@
 #include <future>
 #include <atomic>
 #include <memory>
+#include <stop_token>
 #include "rida_planner.h"
 #include "plan_result.h"
 
@@ -22,7 +23,8 @@ namespace rida_goap
         rida_planner planner;
         std::future<plan_result> planning_future;
         std::atomic<bool> is_planning{false};
-        std::atomic<bool> should_cancel{false};
+
+        std::stop_source stop_source;
         completion_callback on_completed;
 
     public:

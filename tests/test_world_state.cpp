@@ -209,7 +209,7 @@ TEST(WorldState, HashIsDeterministicForSameState)
     a.set_int("ammo", 3);
     b.set_bool("alive", true);
     b.set_int("ammo", 3);
-    constexpr std::hash<world_state> h;
+    const std::hash<world_state> h;
     EXPECT_EQ(h(a), h(b));
 }
 
@@ -218,7 +218,7 @@ TEST(WorldState, HashDiffersForDifferentStates)
     world_state a, b;
     a.set_int("ammo", 3);
     b.set_int("ammo", 4);
-    constexpr std::hash<world_state> h;
+    const std::hash<world_state> h;
     EXPECT_EQ(h(a), h(a));
     EXPECT_EQ(h(b), h(b));
 }

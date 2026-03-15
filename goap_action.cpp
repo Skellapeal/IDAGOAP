@@ -11,11 +11,12 @@ namespace rida_goap
 {
     bool goap_action::check_preconditions(const world_state &world_model) const
     {
-        return std::ranges::all_of(preconditions,[&world_model](const auto& entry)
+        for (const auto& [key, condition] : preconditions)
         {
-            const auto& [key, condition] = entry;
-            return condition.evaluate(world_model, key);
-        });
+            if (!world_model.has_state(key)) return false;
+            if (!condition.evaluate(world_model, key)) return false;
+        }
+        return true;
     }
 
     void goap_action::apply_effects(world_state& world_model) const

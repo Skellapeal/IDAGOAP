@@ -41,11 +41,11 @@ class tracked_action : public goap_action
 public:
     bool started = false, ended = false, interrupted = false, end_success = false;
 
-    tracked_action(const std::string& n, int c) : goap_action(n, c) {}
+    tracked_action(const std::string& n, const int c) : goap_action(n, c) {}
     action_status on_tick(float) override { return action_status::Succeeded; }
 
     bool on_start() override { started = true; return true; }
-    void on_end(bool s) override { ended = true; end_success = s; }
+    void on_end(const bool s) override { ended = true; end_success = s; }
     void on_interrupt() override { interrupted = true; }
 };
 
@@ -71,11 +71,10 @@ TEST(PlanExecutor, SetPlanMovesToRunning)
     goal.set_bool("done", true);
     plan_executor ex(&ws);
 
-    auto a = std::make_shared<instant_action>("act", 1);
-    a->add_effect("done", state_value{true});
+    auto a = std::make_shared<multi_tick_action>("act", 1, 5);
     ex.set_plan(build_plan({a}), goal);
 
-    auto result = ex.tick(0.016f);
+    ex.tick(0.016f);
     EXPECT_EQ(ex.get_status(), execution_status::Running);
 }
 
@@ -299,4 +298,57 @@ TEST(PlanExecutor, LifecycleCallbacksInvokedByExecutor)
     EXPECT_TRUE(t->ended);
     EXPECT_TRUE(t->end_success);
     EXPECT_FALSE(t->interrupted);
+}
+
+TEST(PlanExecutor, InterruptCallsOnInterruptNotOnEnd)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto t = std::make_shared<tracked_action>("t", 1);
+    auto slow = std::make_shared<multi_tick_action>("slow", 1, 10);
+
+    class lifecycle_observer : public goap_action
+    {
+    public:
+        int start_count     = 0;
+        int end_count       = 0;
+        int interrupt_count = 0;
+
+        lifecycle_observer() : goap_action("obs", 1) {}
+        action_status on_tick(float) override { return action_status::Running; }
+        bool on_start() override { ++start_count; return true; }
+        void on_end(bool) override { ++end_count; }
+        void on_interrupt() override { ++interrupt_count; }
+    };
+
+    auto obs = std::make_shared<lifecycle_observer>();
+    ex.set_plan(build_plan({obs}), goal);
+    ex.tick(0.016f);
+
+    EXPECT_EQ(obs->start_count, 1);
+    EXPECT_EQ(obs->end_count, 0);
+
+    ex.interrupt();
+
+    EXPECT_EQ(obs->interrupt_count, 1);
+    EXPECT_EQ(obs->end_count, 0);
+    EXPECT_EQ(ex.get_status(), execution_status::Interrupted);
+}
+
+TEST(PlanExecutor, SuccessReportedSameTickLastActionCompletes)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto a = std::make_shared<instant_action>("act", 1);
+    a->add_effect("done", state_value{true});
+    ex.set_plan(build_plan({a}), goal);
+
+    const auto result = ex.tick(0.016f);
+
+    EXPECT_EQ(result.status, execution_status::Success);
+    EXPECT_EQ(ex.get_status(), execution_status::Success);
 }

@@ -10,6 +10,7 @@
 #include <span>
 #include <vector>
 #include <memory>
+#include <stop_token>
 #include "goap_action.h"
 #include "heuristic.h"
 #include "transposition_table.h"
@@ -24,7 +25,7 @@ namespace rida_goap
         int time_budget_ms = -1;
         bool use_transposition_table = true;
         size_t max_transposition_size = std::numeric_limits<size_t>::max();
-        const std::atomic<bool>* cancel_token = nullptr;
+        std::stop_token cancel_token;
     };
 
     class rida_planner

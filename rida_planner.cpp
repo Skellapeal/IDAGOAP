@@ -29,26 +29,28 @@ namespace rida_goap
         return relevant;
     }
 
-
-    bool rida_planner::has_precondition_conflict(const goap_action::const_ptr& action, const world_state &current_goal)
+    bool rida_planner::has_precondition_conflict(const goap_action::const_ptr& action, const world_state& current_goal)
     {
         const auto& effects = action->get_effects();
-
         return std::ranges::any_of(action->get_preconditions(),
-            [&current_goal, &effects](const std::pair<const std::string, state_condition>& precondition_entry)
+            [&current_goal, &effects](const std::pair<const std::string, state_condition>& entry)
             {
-                const auto& [precondition_key, precondition_condition] = precondition_entry;
+                const auto& [key, condition] = entry;
 
-                if (effects.contains(precondition_key)) return false;
-                if (precondition_condition.predicate != predicate_op::Equal) return false;
+                if (effects.contains(key)) return false;
 
-                if (const auto existing_value = current_goal.get_state(precondition_key))
+                const auto existing_value = current_goal.get_state(key);
+                if (!existing_value) return false;
+
+                if (condition.predicate == predicate_op::Equal)
                 {
-                    return *existing_value != precondition_condition.s_value;
+                    return *existing_value != condition.s_value;
                 }
-                return false;
-            }
-        );
+
+                world_state temp;
+                temp.set_state(key, *existing_value);
+                return !condition.evaluate(temp, key);
+            });
     }
 
     bool rida_planner::is_goal_reached(const world_state& regressed_goal, const world_state& start)
@@ -65,14 +67,13 @@ namespace rida_goap
         std::vector<goap_action::const_ptr>& plan,
         const int depth)
     {
-        if (current_options.time_budget_ms >= 0 || current_options.cancel_token != nullptr)
+        if (current_options.time_budget_ms >= 0 || current_options.cancel_token.stop_possible())
         {
             const auto now = std::chrono::steady_clock::now();
             const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
             const bool timed_out = current_options.time_budget_ms >= 0
                 && elapsed > static_cast<std::chrono::milliseconds>(current_options.time_budget_ms);
-            const bool cancelled = current_options.cancel_token != nullptr
-                && current_options.cancel_token->load(std::memory_order_relaxed);
+            const bool cancelled = current_options.cancel_token.stop_requested();
 
             if (timed_out || cancelled)
             {
@@ -88,7 +89,7 @@ namespace rida_goap
         }
 
         ++nodes_expanded;
-        if (nodes_expanded > current_options.max_nodes)
+        if (nodes_expanded >= current_options.max_nodes)
         {
             failure_reason = plan_status::NodeLimitReached;
             return false;
@@ -116,16 +117,20 @@ namespace rida_goap
 
         if (is_goal_reached(current_goal, initial_state)) return true;
 
-        for (const auto& action : available_actions)
+
+        std::vector sorted_actions(available_actions.begin(), available_actions.end());
+        std::ranges::sort(sorted_actions, [](const auto& a, const auto& b) { return a->get_cost() < b->get_cost(); });
+
+        for (const auto& action : sorted_actions)
         {
             if (!is_action_relevant(action, current_goal)) continue;
             if (has_precondition_conflict(action, current_goal)) continue;
 
-            const world_state previous_goal = current_goal;
+            std::vector<std::pair<std::string, std::optional<state_value>>> undo_log;
 
-            // Remove effects from the goal to allow for regression
             for (const auto &key: action->get_effects() | std::views::keys)
             {
+                undo_log.emplace_back(key, current_goal.get_state(key));
                 current_goal.remove_state(key);
             }
 
@@ -133,6 +138,7 @@ namespace rida_goap
             {
                 if (condition.predicate == predicate_op::Equal)
                 {
+                    undo_log.emplace_back(key, current_goal.get_state(key));
                     current_goal.set_state(key, condition.s_value);
                 }
             }
@@ -145,8 +151,11 @@ namespace rida_goap
                 return true;
             }
 
-            plan.pop_back();
-            current_goal = previous_goal;
+            for (auto &[fst, snd] : std::ranges::reverse_view(undo_log))
+            {
+                if (snd) current_goal.set_state(fst, *snd);
+                else current_goal.remove_state(fst);
+            }
         }
 
         if (current_options.use_transposition_table)
@@ -182,25 +191,17 @@ namespace rida_goap
             }
         }
 
-        if (usable_actions.empty())
-        {
-            if (is_goal_reached(goal_state, initial_state))
-            {
-                result.status = plan_status::Success;
-                result.nodes_expanded = 0;
-            }
-            else
-            {
-                result.status = plan_status::NoSolutionExists;
-            }
-            return result;
-        }
-
         if (is_goal_reached(goal_state, initial_state))
         {
             result.status = plan_status::Success;
             result.nodes_expanded = 0;
             result.planning_time_ms = 0;
+            return result;
+        }
+
+        if (usable_actions.empty())
+        {
+            result.status = plan_status::NoSolutionExists;
             return result;
         }
 
@@ -210,7 +211,11 @@ namespace rida_goap
 
         while (true)
         {
-            transpos_table.clear();
+            if (current_options.use_transposition_table)
+            {
+                transpos_table.clear();
+            }
+            failure_reason = plan_status::Success;
             int next_bound = std::numeric_limits<int>::max();
 
             if (regressive_ida_search(current_goal, initial_state, usable_actions, heuristic,

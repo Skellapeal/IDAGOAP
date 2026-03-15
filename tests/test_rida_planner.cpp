@@ -17,10 +17,12 @@ static goap_action::ptr make_action(
     {
     public:
         simple_action(const std::string& n, const int c) : goap_action(n, c) {}
+        action_status on_tick(float) override { return action_status::Succeeded; }
     };
+
     auto a = std::make_shared<simple_action>(name, cost);
     for (auto& [k, v] : preconditions) a->add_precondition(k, v);
-    for (auto& [k, v] : effects)       a->add_effect(k, v);
+    for (auto& [k, v] : effects) a->add_effect(k, v);
     return a;
 }
 
@@ -179,22 +181,31 @@ TEST(RidaPlanner, PlanSucceedsWithTranspositionTableDisabled)
 TEST(RidaPlanner, CancelTokenAbortsPlanning)
 {
     rida_planner planner;
-    const std::atomic cancel{true};
+    std::stop_source cancel;
     world_state start, goal;
 
-    start.set_bool("a", false); start.set_bool("b", false); start.set_bool("c", false);
+    start.set_bool("a", false);
+    start.set_bool("b", false);
+    start.set_bool("c", false);
     goal.set_bool("c", true);
 
-    auto s1 = make_action("s1",1,{{"a",state_value{false}}},{{"a",state_value{true}}});
-    auto s2 = make_action("s2",1,{{"a",state_value{true}}}, {{"b",state_value{true}}});
-    auto s3 = make_action("s3",1,{{"b",state_value{true}}}, {{"c",state_value{true}}});
+    auto s1 = make_action("s1", 1, {{"a", state_value{false}}}, {{"a", state_value{true}}});
+    auto s2 = make_action("s2", 1, {{"a", state_value{true}}},  {{"b", state_value{true}}});
+    auto s3 = make_action("s3", 1, {{"b", state_value{true}}},  {{"c", state_value{true}}});
 
-    std::vector actions = {s1,s2,s3};
-    planner_options opts; opts.cancel_token = &cancel;
+    std::vector actions = {s1, s2, s3};
+    planner_options opts;
+    opts.cancel_token = cancel.get_token();
+
+    cancel.request_stop();
+
     const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
 
     EXPECT_FALSE(result.success());
-    EXPECT_NE(result.status, plan_status::NoSolutionExists);
+    EXPECT_TRUE(
+        result.status == plan_status::Cancelled ||
+        result.status == plan_status::TimedOut
+    ) << "Expected cancellation status, got: " << result.status_string();
 }
 
 TEST(RidaPlanner, ChoosesCheaperPlanWhenTwoPathsExist)
@@ -238,4 +249,54 @@ TEST(RidaPlanner, CyclicActionsWithTTDoNotLoopInfinitely)
     EXPECT_FALSE(result.success());
     EXPECT_TRUE(result.status == plan_status::NoSolutionExists || result.status == plan_status::NodeLimitReached
     );
+}
+
+TEST(RidaPlanner, TranspositionTablePersistsAcrossBounds)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_int("step", 0);
+    goal.set_int("step", 3);
+
+    auto s1 = make_action("s1", 1, {{"step", state_value{0}}}, {{"step", state_value{1}}});
+    auto s2 = make_action("s2", 1, {{"step", state_value{1}}}, {{"step", state_value{2}}});
+    auto s3 = make_action("s3", 1, {{"step", state_value{2}}}, {{"step", state_value{3}}});
+
+    std::vector actions = {s1, s2, s3};
+
+    planner_options opts;
+    opts.use_transposition_table = true;
+    opts.max_transposition_size  = 1000;
+
+    const auto result_with_tt    = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
+    opts.use_transposition_table = false;
+    const auto result_without_tt = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
+    ASSERT_TRUE(result_with_tt.success());
+    ASSERT_TRUE(result_without_tt.success());
+    EXPECT_EQ(result_with_tt.size(), 3u);
+    EXPECT_EQ(result_without_tt.size(), 3u);
+    EXPECT_LE(result_with_tt.nodes_expanded, result_without_tt.nodes_expanded);
+}
+
+TEST(RidaPlanner, ComplexDeadEndGraphReturnsNoSolution)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("a", false);
+    start.set_bool("b", false);
+    goal.set_bool("c", true);
+
+    auto ab = make_action("set_b", 1, {{"a", state_value{false}}}, {{"b", state_value{true}}});
+    auto ba = make_action("set_a", 1, {{"b", state_value{true}}},  {{"a", state_value{true}}});
+
+    std::vector actions = {ab, ba};
+    planner_options opts;
+    opts.max_nodes = 500;
+
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+    EXPECT_FALSE(result.success());
+    EXPECT_TRUE(result.status == plan_status::NoSolutionExists ||
+                result.status == plan_status::NodeLimitReached);
 }

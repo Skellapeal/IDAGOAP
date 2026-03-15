@@ -49,7 +49,8 @@ namespace rida_goap
 
         if (!current_action)
         {
-            current_action = std::const_pointer_cast<goap_action>(current_plan.actions[current_action_index]);
+            current_action = std::const_pointer_cast<goap_action>(
+                current_plan.actions[current_action_index]);
             action_started = false;
         }
 
@@ -57,9 +58,11 @@ namespace rida_goap
         {
             if (!validate_preconditions())
             {
+                result.failure_reason = "Preconditions not met for action: "
+                                        + current_action->get_name();
+
                 status = execution_status::NeedReplanning;
                 result.status = status;
-                result.failure_reason = "Preconditions not met for action: " + current_action->get_name();
 
                 if (auto_replan && attempt_replan())
                 {
@@ -84,6 +87,7 @@ namespace rida_goap
         }
 
         const action_status tick_status = current_action->on_tick(delta_time);
+
         if (tick_status == action_status::Running)
         {
             result.status = status;
@@ -93,13 +97,14 @@ namespace rida_goap
 
         if (tick_status == action_status::Failed)
         {
+            const std::string failed_name = current_plan.actions[current_action_index]->get_name();
             end_current_action(false);
             current_action = nullptr;
             action_started = false;
 
+            result.failure_reason = "Action failed: " + current_plan.actions[current_action_index]->get_name();
             status = execution_status::NeedReplanning;
             result.status = status;
-            result.failure_reason = "Action failed: " + current_plan.actions[current_action_index]->get_name();
 
             if (auto_replan && attempt_replan())
             {
@@ -117,6 +122,11 @@ namespace rida_goap
         action_started = false;
         ++current_action_index;
 
+        if (current_action_index >= current_plan.actions.size())
+        {
+            status = execution_status::Success;
+        }
+
         result.current_action_index = current_action_index;
         result.status = status;
         return result;
@@ -127,7 +137,6 @@ namespace rida_goap
         if (current_action && action_started)
         {
             current_action->on_interrupt();
-            end_current_action(false);
         }
 
         status = execution_status::Interrupted;
@@ -153,7 +162,13 @@ namespace rida_goap
     {
         if (!current_action) return;
 
-        if (success && world_model) current_action->apply_effects(*world_model);
+        if (success && world_model)
+        {
+            if (current_action->check_preconditions(*world_model))
+            {
+                current_action->apply_effects(*world_model);
+            }
+        }
         current_action->on_end(success);
     }
 
@@ -167,9 +182,10 @@ namespace rida_goap
     {
         if (!on_replan_requested || !world_model) return false;
 
+        const world_state saved_goal = goal_state;
+
         if (plan_result new_plan = on_replan_requested(*world_model, goal_state); new_plan.success())
         {
-            const world_state saved_goal = goal_state;
             set_plan(std::move(new_plan), saved_goal);
             status = execution_status::Running;
             return true;

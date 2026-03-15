@@ -15,11 +15,11 @@ namespace rida_goap
     {
         if (is_planning.load()) cancel_planning();
 
+        stop_source = std::stop_source{};
         is_planning.store(true);
-        should_cancel.store(false);
 
         planner_options effective_options = options;
-        effective_options.cancel_token = &should_cancel;
+        effective_options.cancel_token = stop_source.get_token();
 
         const auto completion_handler = on_completed;
 
@@ -34,7 +34,10 @@ namespace rida_goap
                 auto result = planner.plan(initial_state, goal_state, actions, *heuristic, effective_options);
                 is_planning.store(false);
 
-                if (completion_handler && !should_cancel.load()) completion_handler(result);
+                if (completion_handler && !effective_options.cancel_token.stop_requested())
+                {
+                    completion_handler(result);
+                }
                 return result;
             }
         );
@@ -55,14 +58,15 @@ namespace rida_goap
 
     void async_planner::cancel_planning()
     {
-        should_cancel.store(true);
-
-        if (planning_future.valid())
+        if (stop_source.request_stop())
         {
-            planning_future.wait();
-        }
+            if (planning_future.valid())
+            {
+                planning_future.wait();
+            }
 
-        is_planning.store(false);
+            is_planning.store(false);
+        }
     }
 
     bool async_planner::try_get_result(plan_result& out_result)

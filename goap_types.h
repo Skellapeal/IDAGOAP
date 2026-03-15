@@ -11,8 +11,7 @@
 #include <variant>
 #include <vector>
 
-namespace rida_goap
-{
+namespace rida_goap {
     class world_state;
     enum class predicate_op
     {
@@ -24,16 +23,29 @@ namespace rida_goap
         GreaterOrEqual
     };
 
+    [[nodiscard]] inline std::string_view to_string(const predicate_op op) noexcept
+    {
+        switch (op)
+        {
+            case predicate_op::Equal:          return "==";
+            case predicate_op::NotEqual:       return "!=";
+            case predicate_op::Less:           return "<";
+            case predicate_op::LessOrEqual:    return "<=";
+            case predicate_op::Greater:        return ">";
+            case predicate_op::GreaterOrEqual: return ">=";
+            default:                           return "?";
+        }
+    }
+
     using state_value = std::variant<int, bool, float, std::string, std::vector<float>>;
 
-    struct state_condition
-    {
+    struct state_condition {
         state_value s_value;
         predicate_op predicate = predicate_op::Equal;
 
         state_condition() = default;
 
-        explicit state_condition(state_value value, const predicate_op comparison = predicate_op::Equal)
+        state_condition(state_value value, const predicate_op comparison = predicate_op::Equal)
         : s_value(std::move(value)), predicate(comparison) {}
 
         [[nodiscard]] bool evaluate(const world_state &world_model, const std::string &key) const;
@@ -67,7 +79,13 @@ namespace rida_goap
     };
 }
 
-template<>
+namespace rida_goap::detail
+{
+    template<typename T>
+    inline constexpr bool always_false_v = false;
+}
+
+template <>
 struct std::hash<rida_goap::state_value>
 {
     std::size_t operator()(const rida_goap::state_value& value) const noexcept
@@ -88,7 +106,12 @@ struct std::hash<rida_goap::state_value>
                 }
                 return seed;
             }
-            return 0;
+            else
+            {
+                static_assert(rida_goap::detail::always_false_v<T>,
+                    "std::hash<state_value>: unhandled variant type — add a hash case");
+                return 0;
+            }
         }, value);
     }
 };
