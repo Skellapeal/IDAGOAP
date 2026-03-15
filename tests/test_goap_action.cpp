@@ -25,6 +25,13 @@ public:
     bool can_run() const override { return can_run_flag; }
 };
 
+class bare_action : public goap_action
+{
+public:
+    bare_action(const std::string& name, const int cost) : goap_action(name, cost) {}
+    action_status on_tick(float) override { return action_status::Succeeded; }
+};
+
 TEST(GoapAction, NameAndCostAreSet)
 {
     const test_action a("attack", 3);
@@ -68,7 +75,15 @@ TEST(GoapAction, CheckPreconditionsOneMissing)
     a.add_precondition("ammo", state_value{5}, predicate_op::Greater);
     world_state ws;
     ws.set_bool("has_weapon", true);
-    // ammo not set
+    EXPECT_FALSE(a.check_preconditions(ws));
+}
+
+TEST(GoapAction, CheckPreconditionsGreaterFailsAtBoundary)
+{
+    test_action a("shoot", 1);
+    a.add_precondition("ammo", state_value{5}, predicate_op::Greater);
+    world_state ws;
+    ws.set_int("ammo", 5);
     EXPECT_FALSE(a.check_preconditions(ws));
 }
 
@@ -96,6 +111,7 @@ TEST(GoapAction, ApplyEffectOverwritesExistingValue)
     ws.set_int("ammo", 0);
     a.apply_effects(ws);
     EXPECT_EQ(*ws.get_int("ammo"), 30);
+    EXPECT_FALSE(ws.get_bool("ammo").has_value());
 }
 
 TEST(GoapAction, ApplyMultipleEffects)
@@ -111,7 +127,7 @@ TEST(GoapAction, ApplyMultipleEffects)
 
 TEST(GoapAction, CanRunDefaultIsTrue)
 {
-    const test_action a("idle", 0);
+    const bare_action a("idle", 0);
     EXPECT_TRUE(a.can_run());
 }
 

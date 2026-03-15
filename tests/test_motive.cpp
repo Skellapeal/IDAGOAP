@@ -54,7 +54,7 @@ TEST(Motive, IsNotSatisfiedWhenWorldMissingKey)
 
 TEST(Motive, IsSatisfiedWithEmptyGoalIsAlwaysTrue)
 {
-    const world_state goal; // empty
+    const world_state goal;
     const motive m(goal, 0);
     world_state world;
     world.set_bool("alive", true);

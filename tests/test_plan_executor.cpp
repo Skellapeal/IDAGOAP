@@ -36,6 +36,19 @@ public:
     }
 };
 
+class tracked_action : public goap_action
+{
+public:
+    bool started = false, ended = false, interrupted = false, end_success = false;
+
+    tracked_action(const std::string& n, int c) : goap_action(n, c) {}
+    action_status on_tick(float) override { return action_status::Succeeded; }
+
+    bool on_start() override { started = true; return true; }
+    void on_end(bool s) override { ended = true; end_success = s; }
+    void on_interrupt() override { interrupted = true; }
+};
+
 static plan_result build_plan(const std::vector<goap_action::ptr> &actions)
 {
     plan_result r;
@@ -63,6 +76,17 @@ TEST(PlanExecutor, SetPlanMovesToRunning)
     ex.set_plan(build_plan({a}), goal);
 
     auto result = ex.tick(0.016f);
+    EXPECT_EQ(ex.get_status(), execution_status::Running);
+}
+
+TEST(PlanExecutor, SetPlanMovesToRunningBeforeTick)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto a = std::make_shared<instant_action>("act", 1);
+    ex.set_plan(build_plan({a}), goal);
     EXPECT_EQ(ex.get_status(), execution_status::Running);
 }
 
@@ -192,6 +216,7 @@ TEST(PlanExecutor, ReplanCallbackIsInvokedOnActionFailure)
     ex.tick(0.016f);
 
     EXPECT_TRUE(replan_called);
+    EXPECT_EQ(ex.get_status(), execution_status::Failed);
 }
 
 TEST(PlanExecutor, EmptyPlanIsTriviallySuccessful)
@@ -207,4 +232,71 @@ TEST(PlanExecutor, EmptyPlanIsTriviallySuccessful)
 
     ex.tick(0.016f);
     EXPECT_EQ(ex.get_status(), execution_status::Success);
+}
+
+TEST(PlanExecutor, SetPlanInterruptsRunningPlan)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto slow = std::make_shared<multi_tick_action>("slow", 1, 10);
+    ex.set_plan(build_plan({slow}), goal);
+    ex.tick(0.016f);
+
+    auto fast = std::make_shared<instant_action>("fast", 1);
+    fast->add_effect("done", state_value{true});
+    ex.set_plan(build_plan({fast}), goal);
+
+    EXPECT_EQ(ex.get_status(), execution_status::Running);
+    EXPECT_EQ(ex.get_current_action_index(), 0u);
+    ex.tick(0.016f); ex.tick(0.016f);
+    EXPECT_EQ(ex.get_status(), execution_status::Success);
+}
+
+TEST(PlanExecutor, PreconditionFailureAtRuntimeTriggersReplan)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    ws.set_bool("ready", false);
+    plan_executor ex(&ws); ex.set_auto_replan(false);
+
+    auto a = std::make_shared<instant_action>("guarded", 1);
+    a->add_precondition("ready", state_value{true});
+    ex.set_plan(build_plan({a}), goal);
+    ex.tick(0.016f);
+
+    EXPECT_EQ(ex.get_status(), execution_status::Failed);
+}
+
+TEST(PlanExecutor, NullWorldModelCausesImmediateFail)
+{
+    plan_executor ex(nullptr);
+    world_state goal;
+    goal.set_bool("done", true);
+
+    const auto a = std::make_shared<instant_action>("act", 1);
+    plan_result r; r.status = plan_status::Success; r.actions.push_back(a);
+    ex.set_plan(r, goal);
+    const auto result = ex.tick(0.016f);
+
+    EXPECT_EQ(ex.get_status(), execution_status::Failed);
+    EXPECT_FALSE(result.failure_reason.empty());
+}
+
+TEST(PlanExecutor, LifecycleCallbacksInvokedByExecutor)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto t = std::make_shared<tracked_action>("t", 1);
+    t->add_effect("done", state_value{true});
+    ex.set_plan(build_plan({t}), goal);
+    ex.tick(0.016f);
+
+    EXPECT_TRUE(t->started);
+    EXPECT_TRUE(t->ended);
+    EXPECT_TRUE(t->end_success);
+    EXPECT_FALSE(t->interrupted);
 }

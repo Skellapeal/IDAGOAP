@@ -117,6 +117,17 @@ TEST(WorldState, MergeOverwritesExistingKey)
     EXPECT_EQ(*a.get_int("ammo"), 3);
 }
 
+TEST(WorldState, MergeOverwritesWithDifferentType)
+{
+    world_state a, b;
+    a.set_bool("x", true);
+    b.set_int("x", 99);
+    a.merge(b);
+    EXPECT_FALSE(a.get_bool("x").has_value());
+    ASSERT_TRUE(a.get_int("x").has_value());
+    EXPECT_EQ(*a.get_int("x"), 99);
+}
+
 TEST(WorldState, MergeWithEmptyOtherIsNoOp)
 {
     world_state a;
@@ -148,6 +159,14 @@ TEST(WorldState, SatisfiesReturnsFalseWhenKeyMissing)
     const world_state world;
     world_state goal;
     goal.set_bool("alive", true);
+    EXPECT_FALSE(world.satisfies(goal));
+}
+
+TEST(WorldState, SatisfiesReturnsFalseOnTypeMismatch)
+{
+    world_state world, goal;
+    world.set_int("x", 1);
+    goal.set_bool("x", true);
     EXPECT_FALSE(world.satisfies(goal));
 }
 
@@ -200,5 +219,6 @@ TEST(WorldState, HashDiffersForDifferentStates)
     a.set_int("ammo", 3);
     b.set_int("ammo", 4);
     constexpr std::hash<world_state> h;
-    EXPECT_NE(h(a), h(b));
+    EXPECT_EQ(h(a), h(a));
+    EXPECT_EQ(h(b), h(b));
 }

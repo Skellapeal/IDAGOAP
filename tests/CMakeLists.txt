@@ -28,6 +28,7 @@ add_executable(idagoap_tests
         test_rida_planner.cpp
         test_async_planner.cpp
         test_plan_executor.cpp
+        test_plan_result.cpp
 )
 
 target_link_libraries(idagoap_tests

@@ -56,10 +56,9 @@ TEST(GoalSelector, ClearRemovesAllMotives)
 TEST(GoalSelector, CustomUtilityEvaluatorIsUsed)
 {
     goal_selector gs;
-    gs.add_motive(make_motive("patrol", true, 10)); // high raw priority
-    gs.add_motive(make_motive("flee", true, 1));    // low raw priority
+    gs.add_motive(make_motive("patrol", true, 10));
+    gs.add_motive(make_motive("flee", true, 1));
 
-    // Override: always prefer "flee"
     gs.set_utility_evaluator([](const motive& m, const world_state&)
     {
         return m.get_goal_state().has_state("flee") ? 100.0f : 0.0f;
@@ -79,7 +78,17 @@ TEST(GoalSelector, EvaluateAllMotivesReturnsAllWithScores)
 
     const world_state ws;
     const auto all = gs.evaluate_all_motives(ws);
-    EXPECT_EQ(all.size(), 2u);
+    ASSERT_EQ(all.size(), 2u);
+    bool found_patrol = false, found_attack = false;
+
+    for (const auto &m: all | std::views::keys)
+    {
+        if (m->get_goal_state().has_state("patrol")) found_patrol = true;
+        if (m->get_goal_state().has_state("attack")) found_attack = true;
+    }
+
+    EXPECT_TRUE(found_patrol);
+    EXPECT_TRUE(found_attack);
 }
 
 TEST(GoalSelector, SelectGoalStateReturnsNulloptWhenEmpty)

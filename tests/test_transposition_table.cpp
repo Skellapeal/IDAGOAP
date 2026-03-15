@@ -77,3 +77,21 @@ TEST(TranspositionTable, LRUEvictsWhenFull)
     EXPECT_TRUE(tt.lookup(c).has_value());
     EXPECT_EQ(tt.size(), 2u);
 }
+
+TEST(TranspositionTable, LRUAccessPromotionPreventsEviction)
+{
+    transposition_table tt;
+    tt.set_max_size(2);
+    world_state a, b, c;
+    a.set_int("k", 1); b.set_int("k", 2); c.set_int("k", 3);
+
+    tt.store(a, 10);
+    tt.store(b, 20);
+    tt.lookup(a);
+    tt.store(c, 30);
+
+    EXPECT_TRUE(tt.lookup(a).has_value());
+    EXPECT_FALSE(tt.lookup(b).has_value());
+    EXPECT_TRUE(tt.lookup(c).has_value());
+    EXPECT_EQ(tt.size(), 2u);
+}

@@ -13,7 +13,8 @@ static goap_action::ptr make_action(
     std::initializer_list<std::pair<std::string, state_value>> preconditions,
     std::initializer_list<std::pair<std::string, state_value>> effects)
 {
-    class simple_action : public goap_action {
+    class simple_action : public goap_action
+    {
     public:
         simple_action(const std::string& n, const int c) : goap_action(n, c) {}
     };
@@ -28,7 +29,7 @@ TEST(RidaPlanner, TriviallySatisfiedGoalReturnEmptyPlan)
     rida_planner planner;
     world_state start, goal;
     start.set_bool("alive", true);
-    goal.set_bool("alive", true); // already met
+    goal.set_bool("alive", true);
     std::vector<goap_action::ptr> actions;
     const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
     EXPECT_TRUE(result.success());
@@ -116,20 +117,44 @@ TEST(RidaPlanner, DepthLimitPreventsPlan)
     EXPECT_EQ(result.status, plan_status::DepthLimitReached);
 }
 
+TEST(RidaPlanner, DepthLimitOf2AllowsTwoStepPlan)
+{
+    rida_planner planner;
+    world_state start, goal;
+
+    start.set_bool("has_weapon", false); start.set_bool("enemy_dead", false);
+    goal.set_bool("enemy_dead", true);
+
+    auto pick_up = make_action("pick_up_weapon", 1,
+        {{"has_weapon", state_value{false}}}, {{"has_weapon", state_value{true}}});
+    auto shoot   = make_action("shoot_enemy",   1,
+        {{"has_weapon", state_value{true}}},  {{"enemy_dead", state_value{true}}});
+
+    std::vector actions = {pick_up, shoot};
+    planner_options opts; opts.max_depth = 2;
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
+    EXPECT_TRUE(result.success());
+    EXPECT_EQ(result.size(), 2u);
+}
+
 TEST(RidaPlanner, NodeLimitTriggersEarlyExit)
 {
     rida_planner planner;
     world_state start, goal;
-    start.set_bool("a", false);
-    goal.set_bool("a", true);
 
-    const auto a1 = make_action("a1", 1, {{"a", state_value{false}}}, {{"a", state_value{true}}});
-    std::vector actions = {a1};
+    start.set_bool("has_weapon", false); start.set_bool("enemy_dead", false);
+    goal.set_bool("enemy_dead", true);
 
-    planner_options opts;
-    opts.max_nodes = 0;
+    auto pick_up = make_action("pick_up_weapon", 1,
+        {{"has_weapon", state_value{false}}}, {{"has_weapon", state_value{true}}});
+    auto shoot   = make_action("shoot_enemy",   1,
+        {{"has_weapon", state_value{true}}},  {{"enemy_dead", state_value{true}}});
 
+    std::vector actions = {pick_up, shoot};
+    planner_options opts; opts.max_nodes = 1;
     const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
     EXPECT_FALSE(result.success());
     EXPECT_EQ(result.status, plan_status::NodeLimitReached);
 }
@@ -155,54 +180,62 @@ TEST(RidaPlanner, CancelTokenAbortsPlanning)
 {
     rida_planner planner;
     const std::atomic cancel{true};
-
     world_state start, goal;
-    start.set_bool("x", false);
-    goal.set_bool("x", true);
 
-    const auto a = make_action("flip", 1, {{"x", state_value{false}}}, {{"x", state_value{true}}});
-    std::vector actions = {a};
+    start.set_bool("a", false); start.set_bool("b", false); start.set_bool("c", false);
+    goal.set_bool("c", true);
 
-    planner_options opts;
-    opts.cancel_token = &cancel;
+    auto s1 = make_action("s1",1,{{"a",state_value{false}}},{{"a",state_value{true}}});
+    auto s2 = make_action("s2",1,{{"a",state_value{true}}}, {{"b",state_value{true}}});
+    auto s3 = make_action("s3",1,{{"b",state_value{true}}}, {{"c",state_value{true}}});
 
+    std::vector actions = {s1,s2,s3};
+    planner_options opts; opts.cancel_token = &cancel;
     const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
     EXPECT_FALSE(result.success());
+    EXPECT_NE(result.status, plan_status::NoSolutionExists);
 }
 
 TEST(RidaPlanner, ChoosesCheaperPlanWhenTwoPathsExist)
 {
     rida_planner planner;
     world_state start, goal;
-    start.set_bool("enemy_dead", false);
-    goal.set_bool("enemy_dead", true);
 
-    const auto expensive = make_action("bomb", 10, {}, {{"enemy_dead", state_value{true}}});
-    const auto cheap     = make_action("shoot", 1,  {}, {{"enemy_dead", state_value{true}}});
+    start.set_bool("enemy_dead", false); goal.set_bool("enemy_dead", true);
+
+    const auto expensive = make_action("bomb",  10, {}, {{"enemy_dead", state_value{true}}});
+    const auto cheap     = make_action("shoot",  1, {}, {{"enemy_dead", state_value{true}}});
 
     std::vector actions = {expensive, cheap};
     const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
 
     ASSERT_TRUE(result.success());
     EXPECT_EQ(result.actions[0]->get_name(), "shoot");
+    EXPECT_EQ(result.final_cost, 1);
 }
 
-TEST(PlanResult, StatusStringForSuccess)
+TEST(RidaPlanner, CyclicActionsWithTTDoNotLoopInfinitely)
 {
-    plan_result r;
-    r.status = plan_status::Success;
-    EXPECT_FALSE(r.status_string().empty());
-}
+    rida_planner planner;
+    world_state start, goal;
 
-TEST(PlanResult, IsTriviallySatisfiedOnEmptySuccessfulPlan)
-{
-    plan_result r;
-    r.status = plan_status::Success;
-    EXPECT_TRUE(r.is_trivially_satisfied());
-}
+    start.set_bool("flag", false);
+    goal.set_bool("unreachable", true);
 
-TEST(PlanResult, HasNoActionsOnEmptyPlan)
-{
-    const plan_result r;
-    EXPECT_TRUE(r.has_no_actions());
+    auto set_true  = make_action("set_true",  1,
+        {{"flag", state_value{false}}}, {{"flag", state_value{true}}});
+    auto set_false = make_action("set_false", 1,
+        {{"flag", state_value{true}}},  {{"flag", state_value{false}}});
+
+    std::vector actions = {set_true, set_false};
+    planner_options opts;
+
+    opts.use_transposition_table = true;
+    opts.max_nodes = 200;
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
+    EXPECT_FALSE(result.success());
+    EXPECT_TRUE(result.status == plan_status::NoSolutionExists || result.status == plan_status::NodeLimitReached
+    );
 }
