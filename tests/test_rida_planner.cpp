@@ -300,3 +300,193 @@ TEST(RidaPlanner, ComplexDeadEndGraphReturnsNoSolution)
     EXPECT_TRUE(result.status == plan_status::NoSolutionExists ||
                 result.status == plan_status::NodeLimitReached);
 }
+
+TEST(RidaPlanner, DisabledActionIsNotUsedInPlan)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("enemy_dead", false);
+    goal.set_bool("enemy_dead", true);
+
+    const auto disabled = make_action("shoot", 1, {}, {{"enemy_dead", state_value{true}}});
+    const auto enabled  = make_action("bomb",  5, {}, {{"enemy_dead", state_value{true}}});
+
+    class disabled_action : public goap_action {
+    public:
+        disabled_action() : goap_action("shoot", 1) {}
+        action_status on_tick(float) override { return action_status::Succeeded; }
+        bool can_run() const override { return false; }
+    };
+
+    auto da = std::make_shared<disabled_action>();
+    da->add_effect("enemy_dead", state_value{true});
+
+    std::vector<goap_action::ptr> actions = {da, enabled};
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    ASSERT_TRUE(result.success());
+    EXPECT_EQ(result.actions[0]->get_name(), "bomb");
+}
+
+TEST(RidaPlanner, NodesExpandedIsResetBetweenPlanCalls)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    const auto a = make_action("flip", 1,
+        {{"x", state_value{false}}}, {{"x", state_value{true}}});
+    std::vector actions = {a};
+
+    const auto r1 = planner.plan(start, goal, actions, goal_count_heuristic{});
+    const auto r2 = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    EXPECT_EQ(r1.nodes_expanded, r2.nodes_expanded);
+}
+
+TEST(RidaPlanner, PlanFailsWhenNumericPreconditionNotMetInStartState)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_int("ammo", 0);
+    start.set_bool("enemy_dead", false);
+    goal.set_bool("enemy_dead", true);
+
+    const auto shoot = make_action("shoot", 1,
+        {{"ammo", state_value{5}}, },
+        {{"enemy_dead", state_value{true}}});
+
+    class shoot_action : public goap_action {
+    public:
+        shoot_action() : goap_action("shoot", 1) {
+            add_precondition("ammo", state_value{5}, predicate_op::Greater);
+            add_effect("enemy_dead", state_value{true});
+        }
+        action_status on_tick(float) override { return action_status::Succeeded; }
+    };
+
+    const auto sa = std::make_shared<shoot_action>();
+    std::vector<goap_action::ptr> actions = {sa};
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    EXPECT_FALSE(result.success());
+}
+
+TEST(RidaPlanner, PlannerPicksActionWhosePreconditionsAreReachable)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("has_sword", false);
+    start.set_bool("has_bow", true);
+    goal.set_bool("enemy_dead", true);
+
+    class sword_attack : public goap_action {
+    public:
+        sword_attack() : goap_action("sword_attack", 1) {
+            add_precondition("has_sword", state_value{true});
+            add_effect("enemy_dead", state_value{true});
+        }
+        action_status on_tick(float) override { return action_status::Succeeded; }
+    };
+
+    class bow_attack : public goap_action {
+    public:
+        bow_attack() : goap_action("bow_attack", 1) {
+            add_precondition("has_bow", state_value{true});
+            add_effect("enemy_dead", state_value{true});
+        }
+        action_status on_tick(float) override { return action_status::Succeeded; }
+    };
+
+    std::vector<goap_action::ptr> actions = {
+        std::make_shared<sword_attack>(),
+        std::make_shared<bow_attack>()
+    };
+
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    ASSERT_TRUE(result.success());
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result.actions[0]->get_name(), "bow_attack");
+}
+
+TEST(RidaPlanner, GoalStateIsCleanAfterBacktrack)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("a", false);
+    start.set_bool("b", false);
+    goal.set_bool("c", true);
+
+    auto dead_end = make_action("dead_end", 1,
+        {{"z", state_value{true}}},
+        {{"c", state_value{true}}});
+
+    auto step1 = make_action("step1", 1,
+        {{"a", state_value{false}}}, {{"a", state_value{true}}});
+    auto step2 = make_action("step2", 1,
+        {{"a", state_value{true}}},  {{"b", state_value{true}}});
+    auto correct = make_action("correct", 1,
+        {{"a", state_value{true}}, {"b", state_value{true}}},
+        {{"c", state_value{true}}});
+
+    std::vector actions = {dead_end, step1, step2, correct};
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    ASSERT_TRUE(result.success());
+    EXPECT_EQ(result.actions.back()->get_name(), "correct");
+}
+
+TEST(RidaPlanner, ZeroCostActionsDoNotHang)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    auto a = make_action("flip", 0,
+        {{"x", state_value{false}}},
+        {{"x", state_value{true}}});
+
+    std::vector actions = {a};
+    planner_options opts;
+    opts.max_nodes = 1000;
+
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{}, opts);
+
+    EXPECT_TRUE(result.success());
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result.final_cost, 0);
+}
+
+TEST(RidaPlanner, MultiGoalPlanMinimisesCost)
+{
+    rida_planner planner;
+    world_state start, goal;
+    start.set_bool("a", false);
+    start.set_bool("b", false);
+    goal.set_bool("a", true);
+    goal.set_bool("b", true);
+
+    auto cheap_a     = make_action("cheap_a",     1, {}, {{"a", state_value{true}}});
+    auto expensive_a = make_action("expensive_a", 10, {}, {{"a", state_value{true}}});
+    auto set_b       = make_action("set_b",       1, {}, {{"b", state_value{true}}});
+
+    std::vector actions = {expensive_a, cheap_a, set_b};
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    ASSERT_TRUE(result.success());
+    EXPECT_EQ(result.final_cost, 2);
+
+    bool found_cheap    = false;
+    bool found_expensive = false;
+    for (const auto& a : result.actions)
+    {
+        if (a->get_name() == "cheap_a")     found_cheap = true;
+        if (a->get_name() == "expensive_a") found_expensive = true;
+    }
+
+    EXPECT_TRUE(found_cheap)     << "cheap_a should be in the plan";
+    EXPECT_FALSE(found_expensive) << "expensive_a should NOT be in the plan";
+}

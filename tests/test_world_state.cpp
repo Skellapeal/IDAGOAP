@@ -222,3 +222,21 @@ TEST(WorldState, HashDiffersForDifferentStates)
     EXPECT_EQ(h(a), h(a));
     EXPECT_EQ(h(b), h(b));
 }
+
+TEST(WorldState, IntOneDoesNotSatisfyBoolTrueGoal)
+{
+    world_state world, goal;
+    world.set_int("flag", 1);
+    goal.set_bool("flag", true);
+
+    EXPECT_FALSE(world.satisfies(goal));
+}
+
+TEST(WorldState, BoolTrueDoesNotSatisfyIntOneGoal)
+{
+    world_state world, goal;
+    world.set_bool("flag", true);
+    goal.set_int("flag", 1);
+
+    EXPECT_FALSE(world.satisfies(goal));
+}

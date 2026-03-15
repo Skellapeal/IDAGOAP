@@ -9,6 +9,7 @@
 #include <ranges>
 #include <vector>
 #include <limits>
+#include <unordered_set>
 
 namespace rida_goap
 {
@@ -127,10 +128,16 @@ namespace rida_goap
             if (has_precondition_conflict(action, current_goal)) continue;
 
             std::vector<std::pair<std::string, std::optional<state_value>>> undo_log;
+            std::unordered_set<std::string> logged_keys;
+            bool preconditions_safe = true;
 
             for (const auto &key: action->get_effects() | std::views::keys)
             {
-                undo_log.emplace_back(key, current_goal.get_state(key));
+                if (!logged_keys.contains(key))
+                {
+                    undo_log.emplace_back(key, current_goal.get_state(key));
+                    logged_keys.insert(key);
+                }
                 current_goal.remove_state(key);
             }
 
@@ -138,9 +145,33 @@ namespace rida_goap
             {
                 if (condition.predicate == predicate_op::Equal)
                 {
-                    undo_log.emplace_back(key, current_goal.get_state(key));
+                    if (!logged_keys.contains(key))
+                    {
+                        undo_log.emplace_back(key, current_goal.get_state(key));
+                        logged_keys.insert(key);
+                    }
                     current_goal.set_state(key, condition.s_value);
                 }
+                else
+                {
+                    const world_state& check_against =
+                        current_goal.has_state(key) ? current_goal : initial_state;
+                    if (!condition.evaluate(check_against, key))
+                    {
+                        preconditions_safe = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!preconditions_safe)
+            {
+                for (auto& [key, value] : std::ranges::reverse_view(undo_log))
+                {
+                    if (value) current_goal.set_state(key, *value);
+                    else current_goal.remove_state(key);
+                }
+                continue;
             }
 
             plan.push_back(action);
@@ -150,6 +181,8 @@ namespace rida_goap
             {
                 return true;
             }
+
+            plan.pop_back();
 
             for (auto &[fst, snd] : std::ranges::reverse_view(undo_log))
             {

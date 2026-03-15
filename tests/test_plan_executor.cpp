@@ -352,3 +352,100 @@ TEST(PlanExecutor, SuccessReportedSameTickLastActionCompletes)
     EXPECT_EQ(result.status, execution_status::Success);
     EXPECT_EQ(ex.get_status(), execution_status::Success);
 }
+
+TEST(PlanExecutor, EffectsAppliedToWorldOnActionSuccess)
+{
+    world_state ws, goal;
+    ws.set_bool("has_weapon", false);
+    goal.set_bool("enemy_dead", true);
+    plan_executor ex(&ws);
+
+    auto a = std::make_shared<instant_action>("pickup", 1);
+    a->add_precondition("has_weapon", state_value{false});
+    a->add_effect("has_weapon", state_value{true});
+    ex.set_plan(build_plan({a}), goal);
+
+    ex.tick(0.016f);
+
+    ASSERT_TRUE(ws.get_bool("has_weapon").has_value());
+    EXPECT_TRUE(*ws.get_bool("has_weapon"));
+}
+
+TEST(PlanExecutor, FailureReasonClearedAfterSuccessfulReplan)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+    ex.set_auto_replan(true);
+
+    ex.set_replan_callback([&](const world_state&, const world_state&) -> plan_result
+    {
+        const auto replacement = std::make_shared<instant_action>("replacement", 1);
+        replacement->add_effect("done", state_value{true});
+        plan_result r;
+        r.status = plan_status::Success;
+        r.actions.push_back(replacement);
+        return r;
+    });
+
+    auto failing = std::make_shared<failing_action>("fail", 1);
+    ex.set_plan(build_plan({failing}), goal);
+
+    const auto result = ex.tick(0.016f);
+
+    EXPECT_TRUE(result.failure_reason.empty())
+        << "Stale failure_reason after replan: " << result.failure_reason;
+    EXPECT_EQ(result.status, execution_status::Running);
+}
+
+TEST(PlanExecutor, OnEndNotCalledWhenOnStartFails)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    bool end_called = false;
+
+    class start_failing_action : public goap_action {
+    public:
+        bool* end_flag;
+        start_failing_action(bool* flag) : goap_action("fail_start", 1), end_flag(flag) {}
+        bool on_start() override { return false; }
+        action_status on_tick(float) override { return action_status::Succeeded; }
+        void on_end(bool) override { *end_flag = true; }
+    };
+
+    auto a = std::make_shared<start_failing_action>(&end_called);
+    ex.set_plan(build_plan({a}), goal);
+    ex.tick(0.016f);
+
+    EXPECT_FALSE(end_called) << "on_end must not be called if on_start returned false";
+    EXPECT_EQ(ex.get_status(), execution_status::Failed);
+}
+
+TEST(PlanExecutor, ResetAfterSuccessAllowsNewPlan)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto a = std::make_shared<instant_action>("act", 1);
+    a->add_effect("done", state_value{true});
+
+    ex.set_plan(build_plan({a}), goal);
+    while (ex.is_running()) ex.tick(0.016f);
+
+    ASSERT_EQ(ex.get_status(), execution_status::Success);
+
+    ex.reset();
+    EXPECT_EQ(ex.get_status(), execution_status::Idle);
+
+    auto b = std::make_shared<instant_action>("act2", 1);
+    b->add_effect("done", state_value{true});
+
+    ex.set_plan(build_plan({b}), goal);
+    EXPECT_EQ(ex.get_status(), execution_status::Running);
+
+    while (ex.is_running()) ex.tick(0.016f);
+    EXPECT_EQ(ex.get_status(), execution_status::Success);
+}

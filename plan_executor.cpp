@@ -108,10 +108,12 @@ namespace rida_goap
 
             if (auto_replan && attempt_replan())
             {
+                result.failure_reason.clear();
                 result.status = execution_status::Running;
                 return result;
             }
 
+            result.failure_reason = "Action failed: " + current_plan.actions[current_action_index]->get_name();
             status = execution_status::Failed;
             result.status = status;
             return result;
