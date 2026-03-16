@@ -9,12 +9,13 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include "goap_types.h"
 
+#include "goap_types.h"
 
 namespace rida_goap
 {
     class world_state;
+
     enum class action_status
     {
         Running,
@@ -39,48 +40,31 @@ namespace rida_goap
         virtual ~goap_action() = default;
 
         goap_action(const goap_action&) = default;
-        goap_action(goap_action&&) = default;
+        goap_action(goap_action&&) noexcept = default;
         goap_action& operator=(const goap_action&) = default;
-        goap_action& operator=(goap_action&&) = default;
+        goap_action& operator=(goap_action&&) noexcept = default;
 
         [[nodiscard]] const std::string& get_name() const { return name; }
         [[nodiscard]] int get_cost() const { return cost; }
         [[nodiscard]] const std::unordered_map<std::string, state_condition>& get_preconditions() const { return preconditions; }
         [[nodiscard]] const std::unordered_map<std::string, state_value>& get_effects() const { return effects; }
 
-        void add_precondition(const std::string& key, state_value value, const predicate_op comparison = predicate_op::Equal)
+        void add_precondition(const std::string& key,
+                              state_value value,
+                              const predicate_op comparison = predicate_op::Equal)
         {
             preconditions[key] = state_condition(std::move(value), comparison);
         }
 
-        void add_effect(const std::string& key, const state_value& value)
-        {
-            effects[key] = value;
-        }
+        void add_effect(const std::string& key, const state_value& value){ effects[key] = value; }
 
-        /**
-        * @brief Checks if this action is statically available.
-         *
-         * ONLY check for properties that CANNOT change during plan execution:
-         * - Agent skills/capabilities
-         * - Global game flags
-         * - Permission/authorization
-         *
-         * DO NOT check for:
-         * - Resources (might be acquired mid-plan)
-         * - Items (might be crafted mid-plan)
-         * - Dynamic world state
-         *
-         * Use preconditions for dynamic requirements instead.
-         */
         [[nodiscard]] virtual bool can_run() const { return true; }
-
         bool check_preconditions(const world_state& world_model) const;
         void apply_effects(world_state& world_model) const;
 
         virtual bool on_start() { return true; }
         virtual action_status on_tick(float delta_time) = 0;
-        virtual void on_end(bool success) {}
+        virtual void on_end(bool) {}
         virtual void on_interrupt() {}
     };
 
@@ -88,11 +72,15 @@ namespace rida_goap
     {
     public:
         instant_goap_action(std::string name, const int cost) : goap_action(std::move(name), cost) {}
-        action_status on_tick(float) final { return execute() ? action_status::Succeeded : action_status::Failed; }
+
+        action_status on_tick(float) final
+        {
+            return execute() ? action_status::Succeeded : action_status::Failed;
+        }
 
     protected:
         virtual bool execute() { return true; }
     };
-} // namespace rida_goap
+}
 
-#endif //IDAGOAP_GOAP_ACTION_H
+#endif // IDAGOAP_GOAP_ACTION_H
