@@ -23,13 +23,8 @@ namespace rida_goap
         utility_evaluator utility_fn;
 
     public:
-        goal_selector()
-        {
-            utility_fn = [](const motive& motive, const world_state&)
-            {
-                return static_cast<float>(motive.get_priority());
-            };
-        }
+        goal_selector() : utility_fn([](const motive& motive, const world_state&)
+            { return static_cast<float>(motive.get_priority());}) {}
 
         void add_motive(std::shared_ptr<motive> motive);
         void remove_motive(const std::shared_ptr<motive>& motive);
@@ -47,8 +42,12 @@ namespace rida_goap
             if (!motive) return std::nullopt;
             return motive->get_goal_state();
         }
-        [[nodiscard]] std::vector<std::pair<std::shared_ptr<motive>, float>> evaluate_all_motives(const world_state& world_model) const;
-        [[nodiscard]] const std::vector<std::shared_ptr<motive>>& get_motives() const { return motives; }
+
+        [[nodiscard]] std::vector<std::pair<std::shared_ptr<motive>, float>>
+        evaluate_all_motives(const world_state& world_model) const;
+
+        [[nodiscard]] const std::vector<std::shared_ptr<motive>>& get_motives() const noexcept
+        { return motives; }
     };
 }
 

@@ -34,6 +34,7 @@ TEST(PlanResult, IsTriviallySatisfiedOnEmptySuccessfulPlan)
     plan_result r;
     r.status = plan_status::Success;
     EXPECT_TRUE(r.is_trivially_satisfied());
+    EXPECT_TRUE(r.has_no_actions());
 }
 
 TEST(PlanResult, IsTriviallySatisfiedFalseWhenActionsPresent)
@@ -49,23 +50,10 @@ TEST(PlanResult, StatusStringIsNonEmptyForAllStatuses)
     for (const auto status : {
         plan_status::Success, plan_status::NoSolutionExists,
         plan_status::TimedOut, plan_status::DepthLimitReached,
-        plan_status::NodeLimitReached })
+        plan_status::Cancelled, plan_status::NodeLimitReached })
     {
         plan_result r; r.status = status;
         EXPECT_FALSE(r.status_string().empty())
             << "Empty status_string for status " << static_cast<int>(status);
     }
-}
-
-TEST(PlanResult, StatusStringForSuccess)
-{
-    plan_result r;
-    r.status = plan_status::Success;
-    EXPECT_FALSE(r.status_string().empty());
-}
-
-TEST(PlanResult, HasNoActionsOnEmptyPlan)
-{
-    const plan_result r;
-    EXPECT_TRUE(r.has_no_actions());
 }

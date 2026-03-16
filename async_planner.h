@@ -49,7 +49,7 @@ namespace rida_goap
             completion_callback callback,
             const planner_options &options = planner_options{});
 
-        [[nodiscard]] bool is_planning_active() const { return is_planning.load(); }
+        [[nodiscard]] bool is_planning_active() const noexcept { return is_planning.load(); }
         void cancel_planning();
 
         [[nodiscard]] bool try_get_result(plan_result& result);

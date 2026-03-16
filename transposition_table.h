@@ -18,10 +18,10 @@ namespace rida_goap
     public:
         void set_max_size(const size_t max) { max_size = max; }
 
-        [[nodiscard]] std::optional<int> lookup(const world_state& state) const;
-        void store(const world_state& state, int cost);
-        void clear();
-        [[nodiscard]] size_t size() const;
+        [[nodiscard]] std::optional<int> lookup(const world_state& state) const noexcept;
+        void store(const world_state& state, int cost) const noexcept;
+        void clear() const;
+        [[nodiscard]] size_t size() const noexcept;
     };
 }
 

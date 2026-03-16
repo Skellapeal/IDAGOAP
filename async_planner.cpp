@@ -22,16 +22,23 @@ namespace rida_goap
         effective_options.cancel_token = stop_source.get_token();
 
         const auto completion_handler = on_completed;
+        rida_planner* planner_ptr = &planner;
 
         planning_future = std::async(std::launch::async,
-            [this,
+            [planner_ptr,
                 initial_state, goal_state,
                 actions = std::move(available_actions),
                 heuristic = std::move(heuristic),
                 effective_options,
-                completion_handler]() mutable -> plan_result
+                completion_handler,
+                this]() mutable -> plan_result
             {
-                auto result = planner.plan(initial_state, goal_state, actions, *heuristic, effective_options);
+                auto result = planner_ptr->plan(
+                    initial_state, goal_state,
+                    std::span(actions.begin(), actions.end()),
+                    *heuristic,
+                    effective_options);
+
                 is_planning.store(false);
 
                 if (completion_handler && !effective_options.cancel_token.stop_requested())

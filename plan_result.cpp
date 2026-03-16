@@ -10,18 +10,13 @@ namespace rida_goap
     {
         switch (status)
         {
-            case plan_status::Success:
-                return "Success";
-            case plan_status::NoSolutionExists:
-                return "No solution exists";
-            case plan_status::TimedOut:
-                return "Planning Timed out";
-            case plan_status::DepthLimitReached:
-                return "Depth limit reached";
-            case plan_status::NodeLimitReached:
-                return "Node limit reached";
-            default:
-                return "Unknown status";
+            case plan_status::Success:              return "Success";
+            case plan_status::NoSolutionExists:     return "No solution exists";
+            case plan_status::TimedOut:             return "Planning Timed out";
+            case plan_status::DepthLimitReached:    return "Depth limit reached";
+            case plan_status::NodeLimitReached:     return "Node limit reached";
+            case plan_status::Cancelled:            return "Cancelled";
+            default:                                return "Unknown status";
         }
     }
 }

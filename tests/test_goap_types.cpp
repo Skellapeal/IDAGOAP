@@ -8,20 +8,14 @@
 
 using namespace rida_goap;
 
-TEST(StateCondition, EqualBoolTrue)
+TEST(StateCondition, EqualBoolMatchAndMismatch)
 {
     world_state ws;
     ws.set_bool("armed", true);
-    const state_condition cond(state_value{true}, predicate_op::Equal);
-    EXPECT_TRUE(cond.evaluate(ws, "armed"));
-}
-
-TEST(StateCondition, EqualBoolFalse)
-{
-    world_state ws;
-    ws.set_bool("armed", false);
-    const state_condition cond(state_value{true}, predicate_op::Equal);
-    EXPECT_FALSE(cond.evaluate(ws, "armed"));
+    const state_condition match(state_value{true},  predicate_op::Equal);
+    const state_condition miss (state_value{false}, predicate_op::Equal);
+    EXPECT_TRUE (match.evaluate(ws, "armed"));
+    EXPECT_FALSE(miss .evaluate(ws, "armed"));
 }
 
 TEST(StateCondition, NotEqualInt)
@@ -64,20 +58,17 @@ TEST(StateCondition, GreaterOrEqualFloat)
     EXPECT_TRUE(cond.evaluate(ws, "speed"));
 }
 
-TEST(StateCondition, BoolWithLessPredicateReturnsFalse)
+TEST(StateCondition, OrderedPredicateReturnsFalseForNonNumericTypes)
 {
     world_state ws;
     ws.set_bool("flag", true);
-    const state_condition cond(state_value{true}, predicate_op::Less);
-    EXPECT_FALSE(cond.evaluate(ws, "flag"));
-}
-
-TEST(StateCondition, StringWithGreaterPredicateReturnsFalse)
-{
-    world_state ws;
     ws.set_string("mode", "attack");
-    const state_condition cond(state_value{std::string("attack")}, predicate_op::Greater);
-    EXPECT_FALSE(cond.evaluate(ws, "mode"));
+
+    const state_condition bool_less   (state_value{true},                    predicate_op::Less);
+    const state_condition str_greater (state_value{std::string("attack")},   predicate_op::Greater);
+
+    EXPECT_FALSE(bool_less   .evaluate(ws, "flag"));
+    EXPECT_FALSE(str_greater .evaluate(ws, "mode"));
 }
 
 TEST(StateCondition, EvaluateOnMissingKeyReturnsFalse)
@@ -101,7 +92,7 @@ TEST(StateValueHash, SameIntHashesEqual)
     EXPECT_EQ(h(state_value{42}), h(state_value{42}));
 }
 
-TEST(StateValueHash, DifferentIntHashesDiffer)
+TEST(StateValueHash, DifferentValuesHashDifferently)
 {
     const std::hash<state_value> h;
     EXPECT_NE(h(state_value{1}), h(state_value{2}));

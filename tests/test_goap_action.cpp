@@ -39,22 +39,18 @@ TEST(GoapAction, NameAndCostAreSet)
     EXPECT_EQ(a.get_cost(), 3);
 }
 
-TEST(GoapAction, AddAndCheckPreconditionMet)
+TEST(GoapAction, EqualPreconditionMetAndNotMet)
 {
     test_action a("shoot", 1);
     a.add_precondition("has_weapon", state_value{true});
-    world_state ws;
-    ws.set_bool("has_weapon", true);
-    EXPECT_TRUE(a.check_preconditions(ws));
-}
 
-TEST(GoapAction, CheckPreconditionNotMet)
-{
-    test_action a("shoot", 1);
-    a.add_precondition("has_weapon", state_value{true});
-    world_state ws;
-    ws.set_bool("has_weapon", false);
-    EXPECT_FALSE(a.check_preconditions(ws));
+    world_state met;
+    met.set_bool("has_weapon", true);
+    EXPECT_TRUE(a.check_preconditions(met));
+
+    world_state not_met;
+    not_met.set_bool("has_weapon", false);
+    EXPECT_FALSE(a.check_preconditions(not_met));
 }
 
 TEST(GoapAction, CheckPreconditionsAllMet)
@@ -125,42 +121,28 @@ TEST(GoapAction, ApplyMultipleEffects)
     EXPECT_EQ(*ws.get_int("ammo"), 10);
 }
 
-TEST(GoapAction, CanRunDefaultIsTrue)
+TEST(GoapAction, CanRunDefaultTrueOverridableFalse)
 {
-    const bare_action a("idle", 0);
-    EXPECT_TRUE(a.can_run());
+    const bare_action def("idle", 0);
+    EXPECT_TRUE(def.can_run());
+
+    test_action toggled("disabled", 0);
+    toggled.can_run_flag = false;
+    EXPECT_FALSE(toggled.can_run());
 }
 
-TEST(GoapAction, CanRunReturnsFalseWhenDisabled)
-{
-    test_action a("disabled", 0);
-    a.can_run_flag = false;
-    EXPECT_FALSE(a.can_run());
-}
-
-TEST(GoapAction, OnStartIsCalled)
+TEST(GoapAction, LifecycleHooksFiredInCorrectSequence)
 {
     test_action a("move", 1);
-    a.on_start();
+    EXPECT_TRUE(a.on_start());
     EXPECT_TRUE(a.started);
-}
-
-TEST(GoapAction, OnTickReturnSucceeded)
-{
-    test_action a("move", 1);
     EXPECT_EQ(a.on_tick(0.016f), action_status::Succeeded);
-}
-
-TEST(GoapAction, OnEndIsCalled)
-{
-    test_action a("move", 1);
     a.on_end(true);
     EXPECT_TRUE(a.ended);
-}
 
-TEST(GoapAction, OnInterruptIsCalled)
-{
-    test_action a("move", 1);
-    a.on_interrupt();
-    EXPECT_TRUE(a.interrupted);
+    test_action b("move2", 1);
+    b.on_start();
+    b.on_interrupt();
+    EXPECT_TRUE(b.interrupted);
+    EXPECT_FALSE(b.ended);
 }

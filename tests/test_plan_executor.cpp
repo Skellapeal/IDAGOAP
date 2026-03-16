@@ -71,19 +71,6 @@ TEST(PlanExecutor, SetPlanMovesToRunning)
     goal.set_bool("done", true);
     plan_executor ex(&ws);
 
-    auto a = std::make_shared<multi_tick_action>("act", 1, 5);
-    ex.set_plan(build_plan({a}), goal);
-
-    ex.tick(0.016f);
-    EXPECT_EQ(ex.get_status(), execution_status::Running);
-}
-
-TEST(PlanExecutor, SetPlanMovesToRunningBeforeTick)
-{
-    world_state ws, goal;
-    goal.set_bool("done", true);
-    plan_executor ex(&ws);
-
     auto a = std::make_shared<instant_action>("act", 1);
     ex.set_plan(build_plan({a}), goal);
     EXPECT_EQ(ex.get_status(), execution_status::Running);
@@ -312,8 +299,8 @@ TEST(PlanExecutor, InterruptCallsOnInterruptNotOnEnd)
     class lifecycle_observer : public goap_action
     {
     public:
-        int start_count     = 0;
-        int end_count       = 0;
+        int start_count = 0;
+        int end_count = 0;
         int interrupt_count = 0;
 
         lifecycle_observer() : goap_action("obs", 1) {}
@@ -448,4 +435,174 @@ TEST(PlanExecutor, ResetAfterSuccessAllowsNewPlan)
 
     while (ex.is_running()) ex.tick(0.016f);
     EXPECT_EQ(ex.get_status(), execution_status::Success);
+}
+
+TEST(PlanExecutor, FailureReasonPopulatedOnNullWorldModel)
+{
+    plan_executor ex(nullptr);
+    world_state goal;
+    goal.set_bool("done", true);
+
+    const auto a = std::make_shared<instant_action>("act", 1);
+    plan_result r;
+    r.status = plan_status::Success;
+    r.actions.push_back(a);
+
+    ex.set_plan(r, goal);
+    const auto result = ex.tick(0.016f);
+
+    EXPECT_FALSE(result.failure_reason.empty());
+    EXPECT_EQ(result.status, execution_status::Failed);
+}
+
+TEST(PlanExecutor, FailureReasonContainsActionNameOnActionFail)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+    ex.set_auto_replan(false);
+
+    auto a = std::make_shared<failing_action>("named_fail_action", 1);
+    ex.set_plan(build_plan({a}), goal);
+
+    const auto result = ex.tick(0.016f);
+
+    EXPECT_EQ(result.status, execution_status::Failed);
+    EXPECT_NE(result.failure_reason.find("named_fail_action"), std::string::npos)
+        << "Failure reason should contain the action name. Got: " << result.failure_reason;
+}
+
+TEST(PlanExecutor, FailureReasonContainsActionNameOnPreconditionFail)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    ws.set_bool("ready", false);
+    plan_executor ex(&ws);
+    ex.set_auto_replan(false);
+
+    auto a = std::make_shared<instant_action>("guarded_action", 1);
+    a->add_precondition("ready", state_value{true});
+    ex.set_plan(build_plan({a}), goal);
+
+    const auto result = ex.tick(0.016f);
+
+    EXPECT_NE(result.failure_reason.find("guarded_action"), std::string::npos)
+        << "Failure reason should contain the action name";
+}
+
+TEST(PlanExecutor, SuccessTickDoesNotAdvanceActionIndexBeyondPlanSize)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto a = std::make_shared<instant_action>("act", 1);
+    a->add_effect("done", state_value{true});
+    ex.set_plan(build_plan({a}), goal);
+
+    ex.tick(0.016f);
+    ex.tick(0.016f);
+    ex.tick(0.016f);
+
+    EXPECT_EQ(ex.get_status(), execution_status::Success);
+    EXPECT_LE(ex.get_current_action_index(), 1u);
+}
+
+TEST(PlanExecutor, ReplanCallbackReceivesCurrentWorldAndGoal)
+{
+    world_state ws, goal;
+    ws.set_bool("armed", false);
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+    ex.set_auto_replan(true);
+
+    bool world_correct = false;
+    bool goal_correct  = false;
+
+    ex.set_replan_callback(
+        [&](const world_state& w, const world_state& g) -> plan_result
+        {
+            world_correct = w.has_state("armed");
+            goal_correct  = g.has_state("done");
+
+            plan_result fail;
+            fail.status = plan_status::NoSolutionExists;
+            return fail;
+        });
+
+    auto a = std::make_shared<failing_action>("fail", 1);
+    ex.set_plan(build_plan({a}), goal);
+    ex.tick(0.016f);
+    ex.tick(0.016f);
+
+    EXPECT_TRUE(world_correct) << "Replan callback did not receive current world model";
+    EXPECT_TRUE(goal_correct)  << "Replan callback did not receive current goal";
+}
+
+TEST(PlanExecutor, SuccessfulReplanResumesExecutionFromNewPlanStart)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+    ex.set_auto_replan(true);
+
+    int replan_count = 0;
+
+    ex.set_replan_callback(
+        [&](const world_state&, const world_state& g) -> plan_result
+        {
+            ++replan_count;
+            const auto replacement = std::make_shared<instant_action>("recovery", 1);
+            replacement->add_effect("done", state_value{true});
+            plan_result r;
+            r.status = plan_status::Success;
+            r.actions.push_back(replacement);
+            return r;
+        });
+
+    auto fail = std::make_shared<failing_action>("fail", 1);
+    ex.set_plan(build_plan({fail}), goal);
+
+    ex.tick(0.016f);
+    EXPECT_EQ(replan_count, 1);
+    EXPECT_EQ(ex.get_status(), execution_status::Running);
+    EXPECT_EQ(ex.get_current_action_index(), 0u)
+        << "After replan, execution must restart from index 0";
+}
+
+TEST(PlanExecutor, MultiActionPlanAdvancesIndexOnEachSuccess)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto a1 = std::make_shared<instant_action>("step1", 1);
+    auto a2 = std::make_shared<instant_action>("step2", 1);
+    auto a3 = std::make_shared<instant_action>("step3", 1);
+    a3->add_effect("done", state_value{true});
+
+    ex.set_plan(build_plan({a1, a2, a3}), goal);
+
+    ex.tick(0.016f);
+    EXPECT_EQ(ex.get_current_action_index(), 1u);
+
+    ex.tick(0.016f);
+    EXPECT_EQ(ex.get_current_action_index(), 2u);
+
+    ex.tick(0.016f);
+    EXPECT_EQ(ex.get_status(), execution_status::Success);
+}
+
+TEST(PlanExecutor, CurrentActionReflectsActiveActionDuringExecution)
+{
+    world_state ws, goal;
+    goal.set_bool("done", true);
+    plan_executor ex(&ws);
+
+    auto slow = std::make_shared<multi_tick_action>("slow_step", 1, 3);
+    ex.set_plan(build_plan({slow}), goal);
+
+    ex.tick(0.016f); // starts slow_step
+    ASSERT_NE(ex.get_current_action(), nullptr);
+    EXPECT_EQ(ex.get_current_action()->get_name(), "slow_step");
 }

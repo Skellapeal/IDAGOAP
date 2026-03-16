@@ -6,7 +6,7 @@
 
 namespace rida_goap
 {
-    std::optional<int> transposition_table::lookup(const world_state &state) const
+    std::optional<int> transposition_table::lookup(const world_state &state) const noexcept
     {
         const auto it = table.find(state);
         if (it == table.end())
@@ -18,7 +18,7 @@ namespace rida_goap
         return it->second.first;
     }
 
-    void transposition_table::store(const world_state &state, const int cost)
+    void transposition_table::store(const world_state &state, const int cost) const noexcept
     {
         if (max_size == 0) return;
 
@@ -39,13 +39,13 @@ namespace rida_goap
         table.emplace(state, std::make_pair(cost, eviction_order.begin()));
     }
 
-    void transposition_table::clear()
+    void transposition_table::clear() const
     {
         table.clear();
         eviction_order.clear();
     }
 
-    size_t transposition_table::size() const
+    size_t transposition_table::size() const noexcept
     {
         return table.size();
     }

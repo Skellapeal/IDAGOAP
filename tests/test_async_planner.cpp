@@ -2,6 +2,7 @@
 // Created by Niall Ó Colmáin on 14/03/2026.
 //
 
+#include <thread>
 #include <gtest/gtest.h>
 #include "async_planner.h"
 #include "heuristics.h"
@@ -167,4 +168,117 @@ TEST(AsyncPlanner, SecondPlanWhileFirstInFlightDoesNotCrash)
     EXPECT_TRUE(result.success());
     ASSERT_EQ(result.size(), 1u);
     EXPECT_EQ(result.actions[0]->get_name(), "flip2");
+}
+
+TEST(AsyncPlanner, IsNotPlanningAfterWaitForResult)
+{
+    async_planner ap;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    const auto action = make_simple_action("flip", "x", false, "x", true);
+    const std::vector actions = {action};
+
+    ap.plan_async(start, goal, actions, std::make_shared<goal_count_heuristic>());
+    ap.wait_for_result();
+
+    EXPECT_FALSE(ap.is_planning_active());
+}
+
+TEST(AsyncPlanner, CancelWhenNotPlanningIsNoOp)
+{
+    async_planner ap;
+    EXPECT_NO_THROW(ap.cancel_planning());
+    EXPECT_FALSE(ap.is_planning_active());
+}
+
+TEST(AsyncPlanner, CancelThenImmediateReplanWorks)
+{
+    async_planner ap;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    const auto action = make_simple_action("flip", "x", false, "x", true);
+    std::vector actions = {action};
+
+    planner_options slow_opts;
+    slow_opts.time_budget_ms = 5000;
+
+    ap.plan_async(start, goal, actions,
+                  std::make_shared<goal_count_heuristic>(), slow_opts);
+    ap.cancel_planning();
+
+    ap.plan_async(start, goal, actions, std::make_shared<goal_count_heuristic>());
+    const auto result = ap.wait_for_result();
+
+    EXPECT_TRUE(result.success());
+    ASSERT_EQ(result.size(), 1u);
+    EXPECT_EQ(result.actions[0]->get_name(), "flip");
+}
+
+TEST(AsyncPlanner, CallbackNotInvokedAfterCancel)
+{
+    async_planner ap;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    const auto action = make_simple_action("flip", "x", false, "x", true);
+    std::vector actions = {action};
+
+    bool callback_called = false;
+    planner_options slow_opts;
+    slow_opts.time_budget_ms = 5000;
+
+    ap.plan_async(start, goal, actions, std::make_shared<goal_count_heuristic>(),
+        [&](const plan_result&) { callback_called = true; },
+        slow_opts);
+
+    ap.cancel_planning();
+    ap.wait_for_result();
+
+    EXPECT_FALSE(callback_called)
+        << "Completion callback must not fire after cancel_planning()";
+}
+
+TEST(AsyncPlanner, TryGetResultReturnsTrueAfterCompletion)
+{
+    async_planner ap;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    const auto action = make_simple_action("flip", "x", false, "x", true);
+    std::vector actions = {action};
+
+    ap.plan_async(start, goal, actions, std::make_shared<goal_count_heuristic>());
+    ap.wait_for_result();
+
+    plan_result r;
+    EXPECT_FALSE(ap.try_get_result(r));
+}
+
+TEST(AsyncPlanner, TryGetResultPopulatesResultOnSuccess)
+{
+    async_planner ap;
+    world_state start, goal;
+    start.set_bool("x", false);
+    goal.set_bool("x", true);
+
+    const auto action = make_simple_action("flip", "x", false, "x", true);
+    std::vector actions = {action};
+
+    ap.plan_async(start, goal, actions, std::make_shared<goal_count_heuristic>());
+
+    plan_result r;
+    while (!ap.try_get_result(r))
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    EXPECT_TRUE(r.success());
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r.actions[0]->get_name(), "flip");
 }

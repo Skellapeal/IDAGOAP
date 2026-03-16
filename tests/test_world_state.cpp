@@ -164,10 +164,16 @@ TEST(WorldState, SatisfiesReturnsFalseWhenKeyMissing)
 
 TEST(WorldState, SatisfiesReturnsFalseOnTypeMismatch)
 {
-    world_state world, goal;
-    world.set_int("x", 1);
-    goal.set_bool("x", true);
-    EXPECT_FALSE(world.satisfies(goal));
+    world_state ws_int, ws_bool;
+    ws_int .set_int ("flag", 1);
+    ws_bool.set_bool("flag", true);
+
+    world_state goal_bool, goal_int;
+    goal_bool.set_bool("flag", true);
+    goal_int .set_int ("flag", 1);
+
+    EXPECT_FALSE(ws_int .satisfies(goal_bool));
+    EXPECT_FALSE(ws_bool.satisfies(goal_int ));
 }
 
 TEST(WorldState, SatisfiesReturnsTrueForEmptyGoal)
@@ -218,25 +224,113 @@ TEST(WorldState, HashDiffersForDifferentStates)
     world_state a, b;
     a.set_int("ammo", 3);
     b.set_int("ammo", 4);
-    const std::hash<world_state> h;
-    EXPECT_EQ(h(a), h(a));
-    EXPECT_EQ(h(b), h(b));
+    EXPECT_NE(std::hash<world_state>{}(a), std::hash<world_state>{}(b));
 }
 
-TEST(WorldState, IntOneDoesNotSatisfyBoolTrueGoal)
+TEST(WorldState, GetIntOnBoolKeyReturnsNullopt)
 {
-    world_state world, goal;
-    world.set_int("flag", 1);
-    goal.set_bool("flag", true);
-
-    EXPECT_FALSE(world.satisfies(goal));
+    world_state ws;
+    ws.set_bool("flag", true);
+    EXPECT_FALSE(ws.get_int("flag").has_value());
 }
 
-TEST(WorldState, BoolTrueDoesNotSatisfyIntOneGoal)
+TEST(WorldState, GetFloatOnStringKeyReturnsNullopt)
 {
-    world_state world, goal;
-    world.set_bool("flag", true);
-    goal.set_int("flag", 1);
+    world_state ws;
+    ws.set_string("mode", "attack");
+    EXPECT_FALSE(ws.get_float("mode").has_value());
+}
 
-    EXPECT_FALSE(world.satisfies(goal));
+TEST(WorldState, GetStringOnFloatKeyReturnsNullopt)
+{
+    world_state ws;
+    ws.set_float("speed", 1.5f);
+    EXPECT_FALSE(ws.get_string("speed").has_value());
+}
+
+TEST(WorldState, GetPositionOnBoolKeyReturnsNullopt)
+{
+    world_state ws;
+    ws.set_bool("at_base", true);
+    EXPECT_FALSE(ws.get_position("at_base").has_value());
+}
+
+TEST(WorldState, SetPosition2DStoresTwoComponents)
+{
+    world_state ws;
+    ws.set_position_2d("pos", 4.0f, 7.0f);
+    const auto p = ws.get_position("pos");
+    ASSERT_TRUE(p.has_value());
+    ASSERT_EQ(p->size(), 2u);
+    EXPECT_FLOAT_EQ((*p)[0], 4.0f);
+    EXPECT_FLOAT_EQ((*p)[1], 7.0f);
+}
+
+TEST(WorldState, MergeDefaultsDoesNotOverwriteExistingKey)
+{
+    world_state a, b;
+    a.set_int("ammo", 10);
+    b.set_int("ammo", 99);
+    a.merge_defaults(b);
+    EXPECT_EQ(*a.get_int("ammo"), 10);
+}
+
+TEST(WorldState, MergeDefaultsAddsAbsentKeys)
+{
+    world_state a, b;
+    a.set_bool("alive", true);
+    b.set_int("ammo", 5);
+    a.merge_defaults(b);
+    ASSERT_TRUE(a.get_int("ammo").has_value());
+    EXPECT_EQ(*a.get_int("ammo"), 5);
+}
+
+TEST(WorldState, MergeDefaultsWithEmptySourceIsNoOp)
+{
+    world_state a;
+    const world_state b;
+    a.set_bool("alive", true);
+    a.merge_defaults(b);
+    EXPECT_EQ(a.get_states().size(), 1u);
+}
+
+TEST(WorldState, SatisfiesConditionMapReturnsTrueWhenAllConditionsMet)
+{
+    world_state ws;
+    ws.set_int("ammo", 10);
+
+    std::unordered_map<std::string, state_condition> conditions;
+    conditions["ammo"] = state_condition(state_value{5}, predicate_op::Greater);
+
+    EXPECT_TRUE(ws.satisfies(conditions));
+}
+
+TEST(WorldState, SatisfiesConditionMapReturnsFalseWhenConditionNotMet)
+{
+    world_state ws;
+    ws.set_int("ammo", 2);
+
+    std::unordered_map<std::string, state_condition> conditions;
+    conditions["ammo"] = state_condition(state_value{5}, predicate_op::Greater);
+
+    EXPECT_FALSE(ws.satisfies(conditions));
+}
+
+TEST(WorldState, SatisfiesEmptyConditionMapAlwaysReturnsTrue)
+{
+    world_state ws;
+    ws.set_bool("alive", true);
+
+    const std::unordered_map<std::string, state_condition> conditions;
+    EXPECT_TRUE(ws.satisfies(conditions));
+}
+
+TEST(WorldState, SatisfiesConditionMapReturnsFalseForMissingKey)
+{
+    const world_state ws;
+
+    std::unordered_map<std::string, state_condition> conditions;
+    conditions["ammo"] = state_condition(state_value{0}, predicate_op::Equal);
+
+    EXPECT_FALSE(ws.satisfies(conditions));
 }

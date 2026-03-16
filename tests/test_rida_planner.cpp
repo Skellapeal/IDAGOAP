@@ -216,7 +216,7 @@ TEST(RidaPlanner, ChoosesCheaperPlanWhenTwoPathsExist)
     start.set_bool("enemy_dead", false); goal.set_bool("enemy_dead", true);
 
     const auto expensive = make_action("bomb",  10, {}, {{"enemy_dead", state_value{true}}});
-    const auto cheap     = make_action("shoot",  1, {}, {{"enemy_dead", state_value{true}}});
+    const auto cheap = make_action("shoot",  1, {}, {{"enemy_dead", state_value{true}}});
 
     std::vector actions = {expensive, cheap};
     const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
@@ -318,7 +318,7 @@ TEST(RidaPlanner, DisabledActionIsNotUsedInPlan)
         bool can_run() const override { return false; }
     };
 
-    auto da = std::make_shared<disabled_action>();
+    const auto da = std::make_shared<disabled_action>();
     da->add_effect("enemy_dead", state_value{true});
 
     std::vector<goap_action::ptr> actions = {da, enabled};
@@ -328,7 +328,7 @@ TEST(RidaPlanner, DisabledActionIsNotUsedInPlan)
     EXPECT_EQ(result.actions[0]->get_name(), "bomb");
 }
 
-TEST(RidaPlanner, NodesExpandedIsResetBetweenPlanCalls)
+TEST(RidaPlanner, NodesExpandedIsFreshEachPlanCall)
 {
     rida_planner planner;
     world_state start, goal;
@@ -343,6 +343,11 @@ TEST(RidaPlanner, NodesExpandedIsResetBetweenPlanCalls)
     const auto r2 = planner.plan(start, goal, actions, goal_count_heuristic{});
 
     EXPECT_EQ(r1.nodes_expanded, r2.nodes_expanded);
+
+    EXPECT_GT(r1.nodes_expanded, 0u);
+    EXPECT_GT(r2.nodes_expanded, 0u);
+    EXPECT_LT(r2.nodes_expanded, r1.nodes_expanded * 2u)
+        << "r2 node count suggests accumulation from r1 — counter not reset between calls";
 }
 
 TEST(RidaPlanner, PlanFailsWhenNumericPreconditionNotMetInStartState)
@@ -489,4 +494,79 @@ TEST(RidaPlanner, MultiGoalPlanMinimisesCost)
 
     EXPECT_TRUE(found_cheap)     << "cheap_a should be in the plan";
     EXPECT_FALSE(found_expensive) << "expensive_a should NOT be in the plan";
+}
+
+TEST(RidaPlanner, SortingPreservesOptimalityAcrossRepeatedCalls)
+{
+    rida_planner planner;
+    world_state start, goal;
+
+    start.set_bool("has_weapon", false);
+    start.set_bool("enemy_dead", false);
+    goal.set_bool("enemy_dead", true);
+
+    auto expensive = make_action("bomb",  10,
+        {},
+        {{"enemy_dead", state_value{true}}});
+
+    auto mid       = make_action("grenade", 5,
+        {},
+        {{"enemy_dead", state_value{true}}});
+
+    auto cheap     = make_action("shoot", 1,
+        {},
+        {{"enemy_dead", state_value{true}}});
+
+    std::vector actions = {expensive, mid, cheap};
+
+    const auto result1 = planner.plan(start, goal, actions, goal_count_heuristic{});
+    const auto result2 = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    ASSERT_TRUE(result1.success());
+    ASSERT_TRUE(result2.success());
+
+    EXPECT_EQ(result1.final_cost,       result2.final_cost);
+
+    EXPECT_EQ(result1.nodes_expanded,   result2.nodes_expanded);
+
+    ASSERT_EQ(result1.size(), 1u);
+    EXPECT_EQ(result1.actions[0]->get_name(), "shoot");
+    EXPECT_EQ(result1.final_cost, 1);
+}
+
+TEST(RidaPlanner, SortingPreservesOptimalMultiStepPlan)
+{
+    rida_planner planner;
+    world_state start, goal;
+
+    start.set_bool("has_weapon", false);
+    start.set_bool("enemy_dead", false);
+    goal.set_bool("enemy_dead", true);
+
+    auto pick_up_cheap = make_action("pick_up_pistol", 1,
+        {{"has_weapon", state_value{false}}},
+        {{"has_weapon", state_value{true}}});
+
+    auto shoot_cheap   = make_action("shoot_pistol", 1,
+        {{"has_weapon", state_value{true}}},
+        {{"enemy_dead", state_value{true}}});
+
+    auto airstrike     = make_action("call_airstrike", 99,
+        {},
+        {{"enemy_dead", state_value{true}}});
+
+    std::vector actions = {airstrike, pick_up_cheap, shoot_cheap};
+
+    const auto result = planner.plan(start, goal, actions, goal_count_heuristic{});
+
+    ASSERT_TRUE(result.success());
+
+    EXPECT_EQ(result.final_cost, 2);
+    EXPECT_EQ(result.size(),     2u);
+
+    for (const auto& action : result.actions)
+    {
+        EXPECT_NE(action->get_name(), "call_airstrike")
+            << "Optimal plan should not include the expensive airstrike action";
+    }
 }

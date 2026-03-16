@@ -14,10 +14,11 @@ namespace rida_goap
         int priority = 0;
 
     public:
-        explicit motive(world_state desired, const int priority = 0) : goal_state(std::move(desired)), priority(priority) {}
+        explicit motive(world_state desired, const int priority = 0)
+            : goal_state(std::move(desired)), priority(priority) {}
 
-        [[nodiscard]] int get_priority() const { return priority; }
-        [[nodiscard]] const world_state& get_goal_state() const { return goal_state; }
+        [[nodiscard]] int get_priority() const noexcept { return priority; }
+        [[nodiscard]] const world_state& get_goal_state() const noexcept { return goal_state; }
         [[nodiscard]] bool is_satisfied(const world_state &world_model) const;
     };
 }
