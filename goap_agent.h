@@ -31,6 +31,7 @@ namespace rida_goap
         bool replan_on_world_change = true;
         bool skip_replan_same_goal = true;
         int max_consecutive_failures = 3;
+        bool synchronous_planning = false;
     };
 
     class goap_agent

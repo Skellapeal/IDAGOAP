@@ -80,18 +80,27 @@ namespace rida_goap
     void goap_agent::kick_off_planning()
     {
         if (!active_heuristic) throw std::runtime_error("goap_agent: no heuristic set before planning");
-
         transition_to(agent_status::Planning);
 
-        planner.plan_async(
-            world_model,
-            active_goal_state,
-            actions,
-            active_heuristic,
-            [this](plan_result result)
-            {
-                on_plan_received(std::move(result));
-            }, config.options);
+        if (config.synchronous_planning)
+        {
+            rida_planner sync;
+            auto result = sync.plan(world_model, active_goal_state,
+                std::span{actions}, *active_heuristic, config.options);
+            on_plan_received(std::move(result));
+        }
+        else
+        {
+            planner.plan_async(
+                world_model,
+                active_goal_state,
+                actions,
+                active_heuristic,
+                [this](plan_result result)
+                {
+                    on_plan_received(std::move(result));
+                }, config.options);
+        }
     }
 
     void goap_agent::phase_planning()
@@ -171,20 +180,34 @@ namespace rida_goap
                 }
                 break;
             case execution_status::Success:
-                if (on_action_finished && executor.get_current_action())
-                {
-                    on_action_finished(*executor.get_current_action(), true);
-                }
+            {
+                const auto& plan_actions = executor.get_plan().actions;
+                const size_t idx = execution_result.current_action_index;
+                const size_t completed = idx > 0 ? idx - 1 : 0;
+                if (on_action_finished && completed < plan_actions.size())
+                    on_action_finished(*plan_actions[completed], true);
                 transition_to(agent_status::Idle);
                 break;
+            }
             case execution_status::Failed:
             case execution_status::NeedReplanning:
-                if (on_action_finished && executor.get_current_action())
+            {
+                const std::string& reason = execution_result.failure_reason;
+                const auto& plan_actions = executor.get_plan().actions;
+                if (on_action_finished)
                 {
-                    on_action_finished(*executor.get_current_action(), false);
+                    for (const auto& a : plan_actions)
+                    {
+                        if (!reason.empty() && reason.find(a->get_name()) != std::string::npos)
+                        {
+                            on_action_finished(*a, false);
+                            break;
+                        }
+                    }
                 }
                 force_replan();
                 break;
+            }
             case execution_status::Interrupted:
                 transition_to(agent_status::Idle);
                 break;

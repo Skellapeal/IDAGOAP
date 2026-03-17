@@ -29,6 +29,7 @@ add_executable(idagoap_tests
         test_async_planner.cpp
         test_plan_executor.cpp
         test_plan_result.cpp
+        test_goap_agent.cpp
 )
 
 target_link_libraries(idagoap_tests
