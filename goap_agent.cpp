@@ -155,6 +155,7 @@ namespace rida_goap
         if (active_motive && active_motive->is_satisfied(world_model))
         {
             executor.interrupt();
+            cached_current_action = nullptr;
             if (on_goal_satisfied) on_goal_satisfied(*active_motive);
             transition_to(agent_status::GoalSatisfied);
             return;
@@ -168,6 +169,7 @@ namespace rida_goap
             {
                 executor.interrupt();
                 planner.cancel_planning();
+                cached_current_action = nullptr;
                 active_motive = candidate;
                 active_goal_state = candidate->get_goal_state();
                 if (on_goal_selected) on_goal_selected(*candidate);
@@ -182,21 +184,35 @@ namespace rida_goap
 
     void goap_agent::handle_execution_result(const execution_result &execution_result)
     {
+        const auto& plan_actions = executor.get_plan().actions;
+        const size_t idx = execution_result.current_action_index;
+
         switch (execution_result.status)
         {
             case execution_status::Running:
-                if (const auto act = executor.get_current_action(); act && on_action_started)
+            {
+                const auto act = executor.get_current_action();
+                if (act)
                 {
-                    on_action_started(*act);
+                    cached_current_action = act;
+                    if (on_action_started) on_action_started(*act);
+                }
+                else
+                {
+                    if (on_action_finished && idx > 0 && idx-1 < plan_actions.size())
+                    {
+                        on_action_finished(*plan_actions[idx-1], true);
+                    }
                 }
                 break;
+            }
             case execution_status::Success:
             {
-                const auto& plan_actions = executor.get_plan().actions;
-                const size_t idx = execution_result.current_action_index;
                 const size_t completed = idx > 0 ? idx - 1 : 0;
                 if (on_action_finished && completed < plan_actions.size())
+                {
                     on_action_finished(*plan_actions[completed], true);
+                }
                 transition_to(agent_status::Idle);
                 break;
             }
@@ -204,7 +220,6 @@ namespace rida_goap
             case execution_status::NeedReplanning:
             {
                 const std::string& reason = execution_result.failure_reason;
-                const auto& plan_actions = executor.get_plan().actions;
                 if (on_action_finished)
                 {
                     for (const auto& a : plan_actions)
@@ -287,6 +302,7 @@ namespace rida_goap
     {
         planner.cancel_planning();
         executor.interrupt();
+        cached_current_action = nullptr;
         transition_to(agent_status::Interrupted);
     }
 
@@ -299,6 +315,7 @@ namespace rida_goap
     {
         planner.cancel_planning();
         executor.reset();
+        cached_current_action = nullptr;
 
         if (try_select_goal()) kick_off_planning();
         else transition_to(agent_status::Idle);
@@ -309,7 +326,7 @@ namespace rida_goap
 
     std::shared_ptr<const goap_action> goap_agent::get_current_action() const noexcept
     {
-        return executor.get_current_action();
+        return cached_current_action;
     }
 
     const plan_result& goap_agent::get_current_plan() const noexcept { return executor.get_plan(); }

@@ -64,6 +64,8 @@ namespace rida_goap
         int consecutive_failures = 0;
         bool world_dirty = false;
 
+        std::shared_ptr<const goap_action> cached_current_action;
+
         status_changed_cb on_status_changed;
         goal_selected_cb on_goal_selected;
         plan_found_cb on_plan_found;
