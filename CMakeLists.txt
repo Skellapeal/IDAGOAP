@@ -16,6 +16,8 @@ add_library(IDAGOAP STATIC
         plan_executor.cpp
         motive.cpp
         goal_selector.cpp
+        goap_agent.cpp
+        goap_agent.h
 )
 
 add_library(rida_goap::rida_goap ALIAS IDAGOAP)
