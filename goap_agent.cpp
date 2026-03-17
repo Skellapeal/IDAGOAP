@@ -48,6 +48,17 @@ namespace rida_goap
     void goap_agent::phase_idle(float)
     {
         if (actions.empty()) return;
+
+        for (const auto& m : selector.get_motives())
+        {
+            if (m->is_satisfied(world_model))
+            {
+                if (on_goal_satisfied) on_goal_satisfied(*m);
+                transition_to(agent_status::GoalSatisfied);
+                return;
+            }
+        }
+
         if (try_select_goal()) kick_off_planning();
     }
 
