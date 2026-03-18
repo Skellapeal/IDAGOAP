@@ -8,6 +8,7 @@ namespace rida_goap
 {
     goap_agent::goap_agent(agent_config config) : executor(&world_model), config(std::move(config))
     {
+        executor.set_world_model(&world_model);
         executor.set_replan_callback([this, config](const world_state& current, const world_state& goal) -> plan_result
         {
             if (!active_heuristic) return plan_result{};
@@ -47,6 +48,7 @@ namespace rida_goap
 
     void goap_agent::phase_idle(float)
     {
+
         if (actions.empty()) return;
 
         for (const auto& m : selector.get_motives())
@@ -152,15 +154,6 @@ namespace rida_goap
 
     void goap_agent::phase_executing(float delta_time)
     {
-        if (active_motive && active_motive->is_satisfied(world_model))
-        {
-            executor.interrupt();
-            cached_current_action = nullptr;
-            if (on_goal_satisfied) on_goal_satisfied(*active_motive);
-            transition_to(agent_status::GoalSatisfied);
-            return;
-        }
-
         if (config.replan_on_world_change && world_dirty && should_recheck_goal())
         {
             world_dirty = false;
@@ -178,6 +171,15 @@ namespace rida_goap
             }
         }
 
+        if (active_motive && active_motive->is_satisfied(world_model))
+        {
+            executor.interrupt();
+            cached_current_action = nullptr;
+            if (on_goal_satisfied) on_goal_satisfied(*active_motive);
+            transition_to(agent_status::GoalSatisfied);
+            return;
+        }
+
         const auto execution_result = executor.tick(delta_time);
         handle_execution_result(execution_result);
     }
@@ -192,7 +194,7 @@ namespace rida_goap
             case execution_status::Running:
             {
                 const auto act = executor.get_current_action();
-                if (act)
+                if (act && act != cached_current_action)
                 {
                     cached_current_action = act;
                     if (on_action_started) on_action_started(*act);
@@ -242,12 +244,10 @@ namespace rida_goap
         }
     }
 
-    world_state& goap_agent::get_world_state() noexcept
+    world_state& goap_agent::get_world_state()
     {
-        mark_world_dirty();
         return world_model;
     }
-
     const world_state& goap_agent::get_world_state() const noexcept { return world_model; }
 
     void goap_agent::set_world_values(std::initializer_list<std::pair<std::string, state_value>> values)
@@ -326,6 +326,7 @@ namespace rida_goap
 
     std::shared_ptr<const goap_action> goap_agent::get_current_action() const noexcept
     {
+        if (const auto live = executor.get_current_action()) return live;
         return cached_current_action;
     }
 

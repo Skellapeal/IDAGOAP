@@ -25,35 +25,32 @@ namespace rida_goap
 
     struct execution_result
     {
-        execution_status status            = execution_status::Idle;
-        size_t           current_action_index = 0;
-        std::string      failure_reason;
+        execution_status status = execution_status::Idle;
+        size_t current_action_index = 0;
+        std::string failure_reason;
     };
 
     class plan_executor
     {
     public:
-        using replan_callback =
-            std::function<plan_result(const world_state& current_world,
-                                      const world_state& goal)>;
+        using replan_callback = std::function<plan_result(const world_state& current_world, const world_state& goal)>;
 
     private:
-        plan_result  current_plan{};
-        world_state  goal_state{};
+        plan_result current_plan{};
+        world_state goal_state{};
 
-        size_t       current_action_index = 0;
+        size_t current_action_index = 0;
         goap_action::ptr current_action{};
-        execution_status  status          = execution_status::Idle;
+        execution_status status = execution_status::Idle;
 
         replan_callback on_replan_requested{};
-        world_state*    world_model       = nullptr;
+        world_state* world_model = nullptr;
 
         bool action_started = false;
-        bool auto_replan    = true;
+        bool auto_replan = true;
 
     public:
-        explicit plan_executor(world_state* world_model = nullptr)
-            : world_model(world_model) {}
+        explicit plan_executor(world_state* world_model = nullptr) : world_model(world_model) {}
 
         void set_plan(plan_result plan, world_state goal);
         void set_world_model(world_state* world) { world_model = world; }

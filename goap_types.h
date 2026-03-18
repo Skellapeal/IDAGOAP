@@ -5,13 +5,13 @@
 #ifndef IDAGOAP_GOAP_TYPES_H
 #define IDAGOAP_GOAP_TYPES_H
 
-#include <cassert>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
-namespace rida_goap {
+namespace rida_goap
+{
     class world_state;
     enum class predicate_op
     {
@@ -39,7 +39,8 @@ namespace rida_goap {
 
     using state_value = std::variant<int, bool, float, std::string, std::vector<float>>;
 
-    struct state_condition {
+    struct state_condition
+    {
         state_value s_value;
         predicate_op predicate = predicate_op::Equal;
 

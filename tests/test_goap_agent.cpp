@@ -30,11 +30,17 @@ public:
     multi_tick_action(const std::string& n, const int ticks, const int c = 1)
         : goap_action(n, c), remaining_(ticks), initial_(ticks) {}
 
-    bool on_start() override { remaining_ = initial_; return true; }
+    bool on_start() override
+    {
+        std::cout << "[ON_START] remaining=" << remaining_ << std::endl;
+        remaining_ = initial_;
+        return true;
+    }
 
     action_status on_tick(float) override
     {
-        return --remaining_ <= 0 ? action_status::Succeeded : action_status::Running;
+        --remaining_;
+        return remaining_ <= 0 ? action_status::Succeeded : action_status::Running;
     }
 };
 

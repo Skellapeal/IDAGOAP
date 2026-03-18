@@ -44,11 +44,10 @@ namespace rida_goap
 
     void plan_executor::ensure_current_action_loaded()
     {
-        if (!current_action &&
+        if (!current_action && !action_started &&
             current_action_index < current_plan.actions.size())
         {
             current_action = std::const_pointer_cast<goap_action>(current_plan.actions[current_action_index]);
-            action_started = false;
         }
     }
 
@@ -82,7 +81,6 @@ namespace rida_goap
             const std::string failure = "Failed to start action: " + current_action->get_name();
             return make_failure(execution_status::Failed, failure);
         }
-
         action_started = true;
         return result;
     }
@@ -135,6 +133,7 @@ namespace rida_goap
 
     execution_result plan_executor::tick(const float delta_time)
     {
+
         execution_result result{};
         result.status = status;
         result.current_action_index = current_action_index;
@@ -150,8 +149,8 @@ namespace rida_goap
         ensure_current_action_loaded();
 
         result = handle_pre_start_phase();
-        if (result.status == execution_status::Failed ||
-            result.status == execution_status::NeedReplanning) return result;
+        if (result.status != execution_status::Running) return result;
+
         return handle_action_tick(delta_time);
     }
 

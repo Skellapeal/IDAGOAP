@@ -85,7 +85,7 @@ namespace rida_goap
 
         void tick(float delta_time);
 
-        world_state& get_world_state() noexcept;
+        world_state& get_world_state();
         const world_state& get_world_state() const noexcept;
 
         void set_world_values(std::initializer_list<std::pair<std::string, state_value>> values);
