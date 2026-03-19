@@ -23,11 +23,11 @@ public:
     action_status on_tick(float) override { return action_status::Failed; }
 };
 
-class multi_tick_action : public goap_action
+class many_tick_action : public goap_action
 {
     int ticks_remaining;
 public:
-    multi_tick_action(const std::string& n, const int c, const int ticks)
+    many_tick_action(const std::string& n, const int c, const int ticks)
         : goap_action(n, c), ticks_remaining(ticks) {}
     action_status on_tick(float) override
     {
@@ -114,7 +114,7 @@ TEST(PlanExecutor, MultiTickActionRunsUntilComplete)
     goal.set_bool("done", true);
     plan_executor ex(&ws);
 
-    auto a = std::make_shared<multi_tick_action>("slow", 1, 3);
+    auto a = std::make_shared<many_tick_action>("slow", 1, 3);
     a->add_effect("done", state_value{true});
     ex.set_plan(build_plan({a}), goal);
 
@@ -133,7 +133,7 @@ TEST(PlanExecutor, InterruptSetsInterruptedStatus)
     goal.set_bool("done", true);
     plan_executor ex(&ws);
 
-    auto a = std::make_shared<multi_tick_action>("slow", 1, 10);
+    auto a = std::make_shared<many_tick_action>("slow", 1, 10);
     ex.set_plan(build_plan({a}), goal);
 
     ex.tick(0.016f);
@@ -226,7 +226,7 @@ TEST(PlanExecutor, SetPlanInterruptsRunningPlan)
     goal.set_bool("done", true);
     plan_executor ex(&ws);
 
-    auto slow = std::make_shared<multi_tick_action>("slow", 1, 10);
+    auto slow = std::make_shared<many_tick_action>("slow", 1, 10);
     ex.set_plan(build_plan({slow}), goal);
     ex.tick(0.016f);
 
@@ -294,7 +294,7 @@ TEST(PlanExecutor, InterruptCallsOnInterruptNotOnEnd)
     plan_executor ex(&ws);
 
     auto t = std::make_shared<tracked_action>("t", 1);
-    auto slow = std::make_shared<multi_tick_action>("slow", 1, 10);
+    auto slow = std::make_shared<many_tick_action>("slow", 1, 10);
 
     class lifecycle_observer : public goap_action
     {
@@ -599,7 +599,7 @@ TEST(PlanExecutor, CurrentActionReflectsActiveActionDuringExecution)
     goal.set_bool("done", true);
     plan_executor ex(&ws);
 
-    auto slow = std::make_shared<multi_tick_action>("slow_step", 1, 3);
+    auto slow = std::make_shared<many_tick_action>("slow_step", 1, 3);
     ex.set_plan(build_plan({slow}), goal);
 
     ex.tick(0.016f); // starts slow_step

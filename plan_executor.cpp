@@ -4,8 +4,6 @@
 
 #include "plan_executor.h"
 
-#include <iostream>
-
 namespace rida_goap
 {
     void plan_executor::set_plan(plan_result plan, world_state goal)
@@ -35,7 +33,6 @@ namespace rida_goap
 
     execution_result plan_executor::handle_finished_plan()
     {
-        std::cout << "Executor: Finished plan\n";
         if (current_action && action_started) end_current_action(true);
 
         status = execution_status::Success;
@@ -136,14 +133,12 @@ namespace rida_goap
 
     execution_result plan_executor::tick(const float delta_time)
     {
-        std::cout << "Executor: Tick\n";
         execution_result result{};
         result.status = status;
         result.current_action_index = current_action_index;
 
         if (!world_model)
         {
-            std::cout << "No world model found\n";
             return make_failure( execution_status::Failed, "No world model set");
         }
 
@@ -160,7 +155,6 @@ namespace rida_goap
 
     void plan_executor::interrupt()
     {
-        std::cout << "Interrupt";
         if (current_action && action_started) current_action->on_interrupt();
 
         status = execution_status::Interrupted;
@@ -185,8 +179,6 @@ namespace rida_goap
     void plan_executor::end_current_action(const bool success) const
     {
         if (!current_action) return;
-
-        std::cout << "Executor: End current action\n";
 
         if (success && world_model)
         {

@@ -32,7 +32,6 @@ public:
 
     bool on_start() override
     {
-        std::cout << "[ON_START] remaining=" << remaining_ << std::endl;
         remaining_ = initial_;
         return true;
     }
