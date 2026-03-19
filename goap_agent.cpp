@@ -4,6 +4,8 @@
 
 #include "goap_agent.h"
 
+#include <iostream>
+
 namespace rida_goap
 {
     goap_agent::goap_agent(agent_config config) : executor(&world_model), config(std::move(config))
@@ -33,15 +35,19 @@ namespace rida_goap
             case agent_status::Idle:
             case agent_status::GoalSatisfied:
             case agent_status::PlanFailed:
+                std::cout << "Status = Plan Failed, Idle, Goal Satisfied\n";
                 phase_idle(delta_time);
                 break;
             case agent_status::Planning:
+                std::cout << "Status = Planning\n";
                 phase_planning();
                 break;
             case agent_status::Executing:
+                std::cout << "Status = Executing\n";
                 phase_executing(delta_time);
                 break;
             case agent_status::Interrupted:
+                std::cout << "Status = Interrupted\n";
                 break;
         }
     }
@@ -51,10 +57,14 @@ namespace rida_goap
 
         if (actions.empty()) return;
 
+        std::cout << "Actions are not empty\n";
+
         for (const auto& m : selector.get_motives())
         {
+            std::cout << m << "\n";
             if (m->is_satisfied(world_model))
             {
+                std::cout << "Satisfied\n";
                 if (on_goal_satisfied) on_goal_satisfied(*m);
                 transition_to(agent_status::GoalSatisfied);
                 return;
@@ -93,25 +103,28 @@ namespace rida_goap
     void goap_agent::kick_off_planning()
     {
         if (!active_heuristic) throw std::runtime_error("goap_agent: no heuristic set before planning");
+        std::cout << "Transition to Planning\n";
         transition_to(agent_status::Planning);
 
         if (config.synchronous_planning)
         {
+            std::cout << "Syncing planning\n";
             rida_planner sync;
-            auto result = sync.plan(world_model, active_goal_state,
+            const auto result = sync.plan(world_model, active_goal_state,
                 std::span{actions}, *active_heuristic, config.options);
-            on_plan_received(std::move(result));
+            on_plan_received(result);
         }
         else
         {
+            std::cout << "Async planning\n";
             planner.plan_async(
                 world_model,
                 active_goal_state,
                 actions,
                 active_heuristic,
-                [this](plan_result result)
+                [this](const plan_result &result)
                 {
-                    on_plan_received(std::move(result));
+                    on_plan_received(result);
                 }, config.options);
         }
     }
@@ -123,23 +136,27 @@ namespace rida_goap
             plan_result result;
             if (planner.try_get_result(result))
             {
-                on_plan_received(std::move(result));
+                on_plan_received(result);
             }
         }
     }
 
     void goap_agent::on_plan_received(const plan_result &result)
     {
+        std::cout << "Plan received\n";
         if (!result.success() || result.actions.empty())
         {
+            std::cout << "Failed\n";
             ++consecutive_failures;
             if (consecutive_failures >= config.max_consecutive_failures)
             {
+                std::cout << "Idling\n";
                 transition_to(agent_status::Idle);
                 consecutive_failures = 0;
             }
             else
             {
+                std::cout << "Plan Failed\n";
                 transition_to(agent_status::PlanFailed);
             }
             return;
@@ -149,6 +166,7 @@ namespace rida_goap
         if (on_plan_found) on_plan_found(result);
 
         executor.set_plan(result, active_goal_state);
+        std::cout << "Transition to Executing\n";
         transition_to(agent_status::Executing);
     }
 
@@ -156,6 +174,7 @@ namespace rida_goap
     {
         if (config.replan_on_world_change && world_dirty && should_recheck_goal())
         {
+            std::cout << "Replanning due to world change.\n";
             world_dirty = false;
             const auto candidate = selector.select_goal(world_model);
             if (candidate && goal_has_changed(*candidate))
@@ -173,6 +192,7 @@ namespace rida_goap
 
         if (active_motive && active_motive->is_satisfied(world_model))
         {
+            std::cout << "Motive is satisfied while executing\n";
             executor.interrupt();
             cached_current_action = nullptr;
             if (on_goal_satisfied) on_goal_satisfied(*active_motive);
@@ -342,8 +362,10 @@ namespace rida_goap
 
     void goap_agent::transition_to(const agent_status next)
     {
+        std::cout << "Transitioning\n";
         if (status == next) return;
 
+        std::cout << "status != next\n";
         const agent_status prev = status;
         status = next;
         if (on_status_changed) on_status_changed(prev, next);
