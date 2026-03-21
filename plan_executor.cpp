@@ -4,6 +4,8 @@
 
 #include "plan_executor.h"
 
+#include <cassert>
+
 namespace rida_goap
 {
     void plan_executor::set_plan(plan_result plan, world_state goal)
@@ -61,27 +63,26 @@ namespace rida_goap
 
         if (!validate_preconditions())
         {
-            const std::string failure = "Preconditions not met for action: " + current_action->get_name();
-
             status = execution_status::NeedReplanning;
-            result.status = status;
-            result.failure_reason = failure;
 
             if (auto_replan && attempt_replan())
             {
                 result.status = execution_status::Running;
-                result.failure_reason.clear();
+                return result;
             }
-            else return make_failure(execution_status::Failed, failure);
-            return result;
+
+            return make_failure(execution_status::Failed, "Preconditions not met for action: "
+                + current_action->get_name());
         }
 
         if (!start_current_action())
         {
-            const std::string failure = "Failed to start action: " + current_action->get_name();
-            return make_failure(execution_status::Failed, failure);
+            return make_failure(execution_status::Failed, "Failed to start action: "
+                + current_action->get_name());
+
         }
         action_started = true;
+        result.status = status;
         return result;
     }
 
@@ -96,24 +97,15 @@ namespace rida_goap
         if (tick_status == action_status::Running) return result;
         if (tick_status == action_status::Failed)
         {
-            const std::string action_name = current_action->get_name();
-
-            end_current_action(false);
-            current_action = nullptr;
-            action_started = false;
-
-            status = execution_status::NeedReplanning;
-            result.status = status;
-            result.failure_reason = "Action failed: " + action_name;
+            std::string failure_msg = "Action failed: " + current_action->get_name();
 
             if (auto_replan && attempt_replan())
             {
                 result.status = execution_status::Running;
-                result.failure_reason.clear();
                 return result;
             }
 
-            return make_failure(execution_status::Failed, "Action failed: " + action_name);
+            return make_failure(execution_status::Failed, std::move(failure_msg));
         }
 
         end_current_action(true);

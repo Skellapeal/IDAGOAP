@@ -100,9 +100,8 @@ namespace rida_goap
             [&effects](const auto& goal_entry)
             {
                 const auto& [key, goal_value] = goal_entry;
-                const bool contains = effects.contains(key);
-                const bool matches  = contains && effects.at(key) == goal_value;
-                return matches;
+                const auto it = effects.find(key);
+                return it != effects.end() && it->second == goal_value;
             });
     }
 
@@ -118,7 +117,7 @@ namespace rida_goap
             {
                 const auto& [key, condition] = entry;
 
-                if (effects.contains(key)) return false;
+                if (effects.find(key) != effects.end()) return false;
 
                 const auto existing_value = current_goal.get_state(key);
                 if (!existing_value) return false;

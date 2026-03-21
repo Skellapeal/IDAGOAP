@@ -41,7 +41,10 @@ namespace rida_goap
 
     void transposition_table::clear() const
     {
-        table.clear();
+        for (auto it = table.begin(); it != table.end();)
+        {
+            it = table.erase(it);
+        }
         eviction_order.clear();
     }
 

@@ -9,16 +9,19 @@ namespace rida_goap
     bool world_state::operator==(const world_state& other) const { return states == other.states; }
     void world_state::set_state(const std::string& key, state_value value) { states[key] = std::move(value); }
 
-    std::optional<state_value> world_state::get_state(const std::string& key) const
+    std::optional<state_value> world_state::get_state(const std::string& key) const noexcept
     {
         if (const auto it = states.find(key); it != states.end()) return it->second;
         return std::nullopt;
     }
 
-    bool world_state::has_state(const std::string& key) const { return states.contains(key); }
+    bool world_state::has_state(const std::string& key) const noexcept
+    { return states.contains(key); }
+
     void world_state::remove_state(const std::string& key) { states.erase(key); }
 
-    const std::unordered_map<std::string, state_value>&world_state::get_states() const { return states; }
+    const std::unordered_map<std::string, state_value>&world_state::get_states() const noexcept
+    { return states; }
 
     void world_state::merge(const world_state& other)
     {

@@ -30,13 +30,13 @@ namespace rida_goap
 
     public:
         void set_state(const std::string& key, state_value value);
-        [[nodiscard]] std::optional<state_value> get_state(const std::string& key) const;
+        [[nodiscard]] std::optional<state_value> get_state(const std::string& key) const noexcept;
 
-        [[nodiscard]] bool has_state(const std::string& key) const;
+        [[nodiscard]] bool has_state(const std::string& key) const noexcept;
         void remove_state(const std::string& key);
 
         [[nodiscard]] const std::unordered_map<std::string, state_value>&
-        get_states() const;
+        get_states() const noexcept;
 
         void set_int(const std::string& key, int value)
         {
