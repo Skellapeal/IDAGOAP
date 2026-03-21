@@ -648,9 +648,9 @@ TEST(GoapAgent, CustomUtilityEvaluatorOverridesDefaultPriority)
 TEST(GoapAgent, GetCurrentAction_ReturnsNonNullDuringExecution)
 {
     agent_config cfg;
-    cfg.goal_recheck_interval  = 0;
+    cfg.goal_recheck_interval = 0;
     cfg.replan_on_world_change = false;
-    cfg.synchronous_planning   = true;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -673,9 +673,9 @@ TEST(GoapAgent, GetCurrentAction_ReturnsNonNullDuringExecution)
 TEST(GoapAgent, GetCurrentPlan_NonEmptyDuringExecution)
 {
     agent_config cfg;
-    cfg.goal_recheck_interval  = 0;
+    cfg.goal_recheck_interval = 0;
     cfg.replan_on_world_change = false;
-    cfg.synchronous_planning   = true;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -697,8 +697,8 @@ TEST(GoapAgent, ReplanOnWorldChange_FalseDisablesGoalRecheck)
 {
     agent_config cfg;
     cfg.replan_on_world_change = false;
-    cfg.goal_recheck_interval  = 1;
-    cfg.synchronous_planning   = true;
+    cfg.goal_recheck_interval = 1;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -737,10 +737,10 @@ TEST(GoapAgent, ReplanOnWorldChange_FalseDisablesGoalRecheck)
 TEST(GoapAgent, SkipReplanSameGoal_PreventsRedundantReplan)
 {
     agent_config cfg;
-    cfg.skip_replan_same_goal  = true;
-    cfg.goal_recheck_interval  = 1;
+    cfg.skip_replan_same_goal = true;
+    cfg.goal_recheck_interval = 1;
     cfg.replan_on_world_change = true;
-    cfg.synchronous_planning   = true;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -768,9 +768,9 @@ TEST(GoapAgent, SkipReplanSameGoal_PreventsRedundantReplan)
 TEST(GoapAgent, Integration_CombatScenario_EnemyKilledOptimally)
 {
     agent_config cfg;
-    cfg.goal_recheck_interval  = 0;
+    cfg.goal_recheck_interval = 0;
     cfg.replan_on_world_change = false;
-    cfg.synchronous_planning   = true;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -825,10 +825,10 @@ TEST(GoapAgent, Integration_CombatScenario_EnemyKilledOptimally)
 TEST(GoapAgent, Integration_AgentRecoversByReplanningAfterActionFails)
 {
     agent_config cfg;
-    cfg.goal_recheck_interval    = 1;
-    cfg.replan_on_world_change   = true;
+    cfg.goal_recheck_interval = 1;
+    cfg.replan_on_world_change = true;
     cfg.max_consecutive_failures = 5;
-    cfg.synchronous_planning     = true;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -843,7 +843,7 @@ TEST(GoapAgent, Integration_AgentRecoversByReplanningAfterActionFails)
 
     const auto shoot = std::make_shared<instant_action>("shoot", 1);
     shoot->add_precondition("gun_jammed", state_value{false});
-    shoot->add_effect("enemy_dead",       state_value{true});
+    shoot->add_effect("enemy_dead", state_value{true});
 
     const auto punch = std::make_shared<instant_action>("punch", 5);
     punch->add_effect("enemy_dead", state_value{true});
@@ -876,10 +876,10 @@ TEST(GoapAgent, Integration_AgentRecoversByReplanningAfterActionFails)
 TEST(GoapAgent, Integration_MultipleGoalsResolvedByPriority)
 {
     agent_config cfg;
-    cfg.goal_recheck_interval  = 1;
+    cfg.goal_recheck_interval = 1;
     cfg.replan_on_world_change = true;
-    cfg.skip_replan_same_goal  = false;
-    cfg.synchronous_planning   = true;
+    cfg.skip_replan_same_goal = false;
+    cfg.synchronous_planning = true;
     goap_agent agent(cfg);
     agent.set_heuristic(std::make_shared<goal_count_heuristic>());
 
@@ -903,7 +903,7 @@ TEST(GoapAgent, Integration_MultipleGoalsResolvedByPriority)
     agent.set_on_goal_selected([&](const motive& m)
     {
         if (!first_goal.empty()) return;
-        if      (m.get_goal_state().has_state("g1")) first_goal = "g1";
+        if (m.get_goal_state().has_state("g1")) first_goal = "g1";
         else if (m.get_goal_state().has_state("g2")) first_goal = "g2";
         else if (m.get_goal_state().has_state("g3")) first_goal = "g3";
     });

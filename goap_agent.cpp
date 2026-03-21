@@ -9,16 +9,14 @@ namespace rida_goap
     goap_agent::goap_agent(agent_config config) : executor(&world_model), config(std::move(config))
     {
         executor.set_world_model(&world_model);
-        executor.set_replan_callback([this, config](const world_state& current, const world_state& goal) -> plan_result
+        executor.set_replan_callback([this, config](const world_state& current,
+            const world_state& goal) -> plan_result
         {
             if (!active_heuristic) return plan_result{};
 
             rida_planner sync_planner;
-            std::vector<goap_action::ptr> action_copy = actions;
-            return sync_planner.plan(current, goal,
-                                     std::span{action_copy},
-                                     *active_heuristic,
-                                     config.options);
+            return sync_planner.plan(current, goal, std::span{actions},
+                *active_heuristic, config.options);
         });
 
         executor.set_auto_replan(false);
@@ -48,35 +46,22 @@ namespace rida_goap
 
     void goap_agent::phase_idle(float)
     {
-
         if (actions.empty()) return;
 
         for (const auto& m : selector.get_motives())
         {
-            if (m->is_satisfied(world_model))
-            {
-                if (on_goal_satisfied) on_goal_satisfied(*m);
-                transition_to(agent_status::GoalSatisfied);
-                return;
-            }
+            if (check_and_handle_goal_satisfied(m)) return;
         }
 
-        if (!config.replan_on_world_change && world_dirty && active_motive)
+        const bool dirty = consume_world_dirty();
+
+        if (!config.replan_on_world_change && dirty && active_motive)
         {
-            world_dirty = false;
-
-            if (active_motive->is_satisfied(world_model))
-            {
-                if (on_goal_satisfied) on_goal_satisfied(*active_motive);
-                transition_to(agent_status::GoalSatisfied);
-                return;
-            }
-
+            if (check_and_handle_goal_satisfied(active_motive)) return;
             kick_off_planning();
             return;
         }
 
-        world_dirty = false;
         if (try_select_goal()) kick_off_planning();
     }
 
@@ -172,9 +157,9 @@ namespace rida_goap
 
     void goap_agent::phase_executing(float delta_time)
     {
-        if (config.replan_on_world_change && world_dirty && should_recheck_goal())
+        const bool dirty = consume_world_dirty();
+        if (config.replan_on_world_change && dirty && should_recheck_goal())
         {
-            world_dirty = false;
             const auto candidate = selector.select_goal(world_model);
             if (candidate && goal_has_changed(*candidate))
             {
@@ -189,13 +174,15 @@ namespace rida_goap
             }
         }
 
-        if (active_motive && active_motive->is_satisfied(world_model))
+        if (active_motive)
         {
-            executor.interrupt();
-            cached_current_action = nullptr;
-            if (on_goal_satisfied) on_goal_satisfied(*active_motive);
-            transition_to(agent_status::GoalSatisfied);
-            return;
+            if (active_motive->is_satisfied(world_model))
+            {
+                executor.interrupt();
+                cached_current_action = nullptr;
+                check_and_handle_goal_satisfied(active_motive);
+                return;
+            }
         }
 
         const auto execution_result = executor.tick(delta_time);
@@ -239,17 +226,9 @@ namespace rida_goap
             case execution_status::Failed:
             case execution_status::NeedReplanning:
             {
-                const std::string& reason = execution_result.failure_reason;
-                if (on_action_finished)
+                if (on_action_finished && idx < plan_actions.size())
                 {
-                    for (const auto& a : plan_actions)
-                    {
-                        if (!reason.empty() && reason.find(a->get_name()) != std::string::npos)
-                        {
-                            on_action_finished(*a, false);
-                            break;
-                        }
-                    }
+                    on_action_finished(*plan_actions[idx], false);
                 }
                 force_replan();
                 break;
@@ -278,6 +257,21 @@ namespace rida_goap
     }
 
     void goap_agent::mark_world_dirty() { world_dirty = true; }
+
+    bool goap_agent::check_and_handle_goal_satisfied(const std::shared_ptr<motive> &motive)
+    {
+        if (!motive || !motive->is_satisfied(world_model)) return false;
+        if (on_goal_satisfied) on_goal_satisfied(*motive);
+        transition_to(agent_status::GoalSatisfied);
+        return true;
+    }
+
+    bool goap_agent::consume_world_dirty() noexcept
+    {
+        const bool was_dirty = world_dirty;
+        world_dirty = false;
+        return was_dirty;
+    }
 
     void goap_agent::add_action(goap_action::ptr action)
     {
