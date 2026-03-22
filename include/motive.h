@@ -23,6 +23,7 @@ namespace rida_goap
         [[nodiscard]] int get_priority() const noexcept { return priority; }
         [[nodiscard]] const world_state& get_goal_state() const noexcept { return goal_state; }
         [[nodiscard]] bool is_persistent() const noexcept { return persistent; }
+        void set_persistent(const bool p) noexcept { persistent = p; }
         [[nodiscard]] bool is_satisfied(const world_state &world_model) const;
 
         void set_priority(const int new_priority) noexcept
