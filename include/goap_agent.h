@@ -98,6 +98,7 @@ namespace rida_goap
         void add_motive(std::shared_ptr<motive> new_motive);
         void remove_motive(const std::shared_ptr<motive>& old_motive);
         void clear_motives();
+        void satisfy_motive(std::string_view motive_name);
 
         void set_utility_evaluator(goal_selector::utility_evaluator fn);
         void set_heuristic(std::shared_ptr<heuristic> new_heuristic);
@@ -123,6 +124,7 @@ namespace rida_goap
         void transition_to(agent_status next);
 
         void phase_idle (float delta_time);
+
         void phase_planning ();
         void phase_executing (float delta_time);
 

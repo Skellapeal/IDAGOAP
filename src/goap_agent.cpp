@@ -65,6 +65,23 @@ namespace rida_goap
         if (try_select_goal()) kick_off_planning();
     }
 
+    void goap_agent::satisfy_motive(const std::string_view motive_name)
+    {
+        const auto m = selector.find_motive(motive_name);
+        if (!m) return;
+
+        m->set_priority(0);
+
+        if (active_motive && active_motive->get_name() == motive_name)
+        {
+            planner.cancel_planning();
+            executor.interrupt();
+            cached_current_action = nullptr;
+            active_motive = nullptr;
+            transition_to(agent_status::Idle);
+        }
+    }
+
     bool goap_agent::try_select_goal()
     {
         if (!config.replan_on_world_change && world_dirty && active_motive) return false;

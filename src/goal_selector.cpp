@@ -12,6 +12,15 @@ namespace rida_goap
     void goal_selector::remove_motive(const std::shared_ptr<motive> &motive) { std::erase(motives, motive); }
     void goal_selector::clear_motives() { motives.clear(); }
 
+    std::shared_ptr<motive> goal_selector::find_motive(std::string_view name) const
+    {
+        const auto it = std::ranges::find_if(motives, [&](const auto& m)
+        {
+            return m->get_name() == name;
+        });
+        return it != motives.end() ? *it : nullptr;
+    }
+
     std::shared_ptr<motive> goal_selector::select_goal(const world_state &world_model) const
     {
         if (motives.empty()) return nullptr;
@@ -21,6 +30,7 @@ namespace rida_goap
 
         for (const auto& motive : motives)
         {
+            if (motive->get_priority() <= 0) continue;
             if (motive->is_satisfied(world_model)) continue;
 
             if (const float utility = utility_fn(*motive, world_model); utility > highest_utility)
@@ -39,6 +49,7 @@ namespace rida_goap
 
         for (const auto& motive : motives)
         {
+            if (motive->get_priority() <= 0) continue;
             if (motive->is_satisfied(world_model)) continue;
             results.emplace_back(motive, utility_fn(*motive, world_model));
         }

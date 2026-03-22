@@ -30,6 +30,8 @@ namespace rida_goap
         void remove_motive(const std::shared_ptr<motive>& motive);
         void clear_motives();
 
+        [[nodiscard]] std::shared_ptr<motive> find_motive(std::string_view name) const;
+
         void set_utility_evaluator(utility_evaluator evaluator)
         {
             utility_fn = std::move(evaluator);
