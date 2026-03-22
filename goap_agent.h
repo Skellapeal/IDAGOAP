@@ -136,7 +136,7 @@ namespace rida_goap
         [[nodiscard]] bool goal_has_changed(const motive& candidate) const noexcept;
         void mark_world_dirty();
 
-        [[nodiscard]] bool check_and_handle_goal_satisfied(const std::shared_ptr<motive>& motive);
+        bool check_and_handle_goal_satisfied(const std::shared_ptr<motive>& motive);
         [[nodiscard]] bool consume_world_dirty() noexcept;
     };
 }
