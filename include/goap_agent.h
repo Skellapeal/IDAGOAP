@@ -99,6 +99,7 @@ namespace rida_goap
         void remove_motive(const std::shared_ptr<motive>& old_motive);
         void clear_motives();
         void satisfy_motive(std::string_view motive_name);
+        void set_motive_priority(std::string_view motive_name, int new_priority) const;
 
         void set_utility_evaluator(goal_selector::utility_evaluator fn);
         void set_heuristic(std::shared_ptr<heuristic> new_heuristic);

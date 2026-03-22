@@ -67,10 +67,7 @@ namespace rida_goap
 
     void goap_agent::satisfy_motive(const std::string_view motive_name)
     {
-        const auto m = selector.find_motive(motive_name);
-        if (!m) return;
-
-        m->set_priority(0);
+        selector.satisfy_motive(motive_name);
 
         if (active_motive && active_motive->get_name() == motive_name)
         {
@@ -80,6 +77,11 @@ namespace rida_goap
             active_motive = nullptr;
             transition_to(agent_status::Idle);
         }
+    }
+
+    void goap_agent::set_motive_priority(const std::string_view motive_name, const int new_priority) const
+    {
+        selector.set_motive_priority(motive_name, 0);
     }
 
     bool goap_agent::try_select_goal()

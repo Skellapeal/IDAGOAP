@@ -42,6 +42,17 @@ namespace rida_goap
         return highest_priority_motive;
     }
 
+    void goal_selector::set_motive_priority(const std::string_view motive_name, const int new_priority) const
+    {
+        const auto m = find_motive(motive_name);
+        if (m) m->set_priority(new_priority);
+    }
+
+    void goal_selector::satisfy_motive(const std::string_view motive_name) const
+    {
+        set_motive_priority(motive_name, 0);
+    }
+
     std::vector<std::pair<std::shared_ptr<motive>, float> > goal_selector::evaluate_all_motives(const world_state &world_model) const
     {
         std::vector<std::pair<std::shared_ptr<motive>, float>> results;

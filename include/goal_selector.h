@@ -38,6 +38,11 @@ namespace rida_goap
         }
 
         [[nodiscard]] std::shared_ptr<motive> select_goal(const world_state& world_model) const;
+
+        void set_motive_priority(std::string_view motive_name, int new_priority) const;
+
+        void satisfy_motive(std::string_view motive_name) const;
+
         [[nodiscard]] std::optional<world_state> select_goal_state(const world_state& world_model) const
         {
             const auto motive = select_goal(world_model);
