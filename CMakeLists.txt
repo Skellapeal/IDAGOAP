@@ -5,33 +5,50 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(UE_PLUGIN_INCLUDE_DIR
+        "E:/Unreal Projects/FinalYearProject/Plugins/IDAGOAP/ThirdParty/IDAGOAPCore/Include"
+        CACHE PATH "UE plugin include destination")
+set(UE_PLUGIN_LIB_DIR
+        "E:/Unreal Projects/FinalYearProject/Plugins/IDAGOAP/ThirdParty/IDAGOAPCore/Lib/Win64"
+        CACHE PATH "UE plugin lib destination")
+
 add_library(IDAGOAP STATIC
-        goap_types.cpp
-        world_state.cpp
-        goap_action.cpp
-        plan_result.cpp
-        transposition_table.cpp
-        rida_planner.cpp
-        async_planner.cpp
-        plan_executor.cpp
-        motive.cpp
-        goal_selector.cpp
-        goap_agent.cpp
-        goap_agent.h
+        src/goap_types.cpp
+        src/world_state.cpp
+        src/goap_action.cpp
+        src/plan_result.cpp
+        src/transposition_table.cpp
+        src/rida_planner.cpp
+        src/async_planner.cpp
+        src/plan_executor.cpp
+        src/motive.cpp
+        src/goal_selector.cpp
+        src/goap_agent.cpp
 )
 
 add_library(rida_goap::rida_goap ALIAS IDAGOAP)
 
 target_include_directories(IDAGOAP PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include/rida_goap>
 )
 
 set_target_properties(IDAGOAP PROPERTIES
         PUBLIC_HEADER
-        "rida_goap.h;goap_types.h;world_state.h;goap_action.h;heuristic.h;heuristics.h;\
-plan_result.h;rida_planner.h;async_planner.h;plan_executor.h;motive.h;\
-goal_selector.h;transposition_table.h"
+        "include/rida_goap.h;\
+        include/goap_types.h;\
+        include/world_state.h;\
+        include/goap_action.h;\
+        include/heuristic.h;\
+        include/heuristics.h;\
+        include/plan_result.h;\
+        include/rida_planner.h;\
+        include/async_planner.h;\
+        include/plan_executor.h;\
+        include/motive.h;\
+        include/goal_selector.h;\
+        include/transposition_table.h;\
+        include/goap_agent.h"
 )
 
 include(GNUInstallDirs)
@@ -45,6 +62,18 @@ install(EXPORT rida_goap_targets
         FILE rida_goap-config.cmake
         NAMESPACE rida_goap::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rida_goap
+)
+
+add_custom_command(TARGET IDAGOAP POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${UE_PLUGIN_LIB_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${UE_PLUGIN_INCLUDE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:IDAGOAP>
+        "${UE_PLUGIN_LIB_DIR}/IDAGOAP.lib"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${UE_PLUGIN_INCLUDE_DIR}"
+        COMMENT "Copying IDAGOAP to UE plugin..."
 )
 
 option(IDAGOAP_BUILD_TESTS "Build IDAGOAP tests" ON)
