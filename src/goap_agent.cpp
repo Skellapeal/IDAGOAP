@@ -46,9 +46,9 @@ namespace rida_goap
     void goap_agent::phase_idle(float)
     {
         if (actions.empty()) return;
-
         for (const auto& m : selector.get_motives())
         {
+            if (m->get_priority() <= 0) continue;
             if (check_and_handle_goal_satisfied(m)) return;
         }
 
