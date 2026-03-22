@@ -29,7 +29,6 @@ namespace rida_goap
         switch (status)
         {
             case agent_status::Idle:
-            case agent_status::GoalSatisfied:
             case agent_status::PlanFailed:
                 phase_idle(delta_time);
                 break;
@@ -81,7 +80,7 @@ namespace rida_goap
 
     void goap_agent::set_motive_priority(const std::string_view motive_name, const int new_priority) const
     {
-        selector.set_motive_priority(motive_name, 0);
+        selector.set_motive_priority(motive_name, new_priority);
     }
 
     bool goap_agent::try_select_goal()
@@ -93,9 +92,9 @@ namespace rida_goap
 
         if (candidate->is_satisfied(world_model))
         {
+            selector.satisfy_motive(candidate->get_name());
             if (on_goal_satisfied) on_goal_satisfied(*candidate);
-
-            transition_to(agent_status::GoalSatisfied);
+            transition_to(agent_status::Idle);
             return false;
         }
 
@@ -280,8 +279,11 @@ namespace rida_goap
     bool goap_agent::check_and_handle_goal_satisfied(const std::shared_ptr<motive> &motive)
     {
         if (!motive || !motive->is_satisfied(world_model)) return false;
+
+        selector.satisfy_motive(motive->get_name());
         if (on_goal_satisfied) on_goal_satisfied(*motive);
-        transition_to(agent_status::GoalSatisfied);
+        active_motive = nullptr;
+        transition_to(agent_status::Idle);
         return true;
     }
 

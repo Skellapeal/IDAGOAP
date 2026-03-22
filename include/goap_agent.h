@@ -20,7 +20,6 @@ namespace rida_goap
         Planning,
         Executing,
         PlanFailed,
-        GoalSatisfied,
         Interrupted
     };
 
