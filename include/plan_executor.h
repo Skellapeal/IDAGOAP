@@ -47,6 +47,7 @@ namespace rida_goap
         world_state* world_model = nullptr;
 
         bool action_started = false;
+        bool just_started = false;
         bool auto_replan = true;
 
     public:

@@ -171,12 +171,6 @@ namespace rida_goap
 
         executor.set_plan(result, active_goal_state);
         transition_to(agent_status::Executing);
-
-        if (on_action_started && !result.actions.empty())
-        {
-            cached_current_action = result.actions.front();
-            on_action_started(*cached_current_action);
-        }
     }
 
     void goap_agent::phase_executing(float delta_time)
@@ -244,6 +238,7 @@ namespace rida_goap
                 {
                     on_action_finished(*plan_actions[completed], true);
                 }
+                cached_current_action = nullptr;
                 transition_to(agent_status::Idle);
                 break;
             }
@@ -258,6 +253,7 @@ namespace rida_goap
                 break;
             }
             case execution_status::Interrupted:
+                cached_current_action = nullptr;
                 transition_to(agent_status::Idle);
                 break;
             default:

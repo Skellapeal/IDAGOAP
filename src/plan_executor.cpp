@@ -82,6 +82,7 @@ namespace rida_goap
 
         }
         action_started = true;
+        just_started = true;
         result.status = status;
         return result;
     }
@@ -137,10 +138,13 @@ namespace rida_goap
         if (!is_running()) return result;
         if (current_action_index >= current_plan.actions.size()) return handle_finished_plan();
 
+        just_started = false;
+
         ensure_current_action_loaded();
 
         result = handle_pre_start_phase();
         if (result.status != execution_status::Running) return result;
+        if (just_started) return result;
 
         return handle_action_tick(delta_time);
     }
