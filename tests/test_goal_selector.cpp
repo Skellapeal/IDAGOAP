@@ -11,7 +11,7 @@ static std::shared_ptr<motive> make_motive(const std::string& key, const bool va
 {
     world_state goal;
     goal.set_bool(key, val);
-    return std::make_shared<motive>(goal, priority);
+    return std::make_shared<motive>("", goal, priority);
 }
 
 TEST(GoalSelector, SelectsHighestPriorityMotive)

@@ -67,20 +67,6 @@ namespace rida_goap
         virtual void on_end(bool) {}
         virtual void on_interrupt() {}
     };
-
-    class instant_goap_action : public goap_action
-    {
-    public:
-        instant_goap_action(std::string name, const int cost) : goap_action(std::move(name), cost) {}
-
-        action_status on_tick(float) final
-        {
-            return execute() ? action_status::Succeeded : action_status::Failed;
-        }
-
-    protected:
-        virtual bool execute() { return true; }
-    };
 }
 
 #endif // IDAGOAP_GOAP_ACTION_H

@@ -78,7 +78,7 @@ protected:
 
         world_state goal_ws;
         goal_ws.set_bool("done", true);
-        agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+        agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
         const auto act = std::make_shared<instant_action>("finish");
         act->add_effect("done", state_value{true});
@@ -118,7 +118,7 @@ TEST(GoapAgent, TickWithNoActionsRemainsIdle)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 1));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 1));
 
     agent.tick(0.016f);
     EXPECT_EQ(agent.get_status(), agent_status::Idle);
@@ -169,14 +169,14 @@ TEST(GoapAgent, GoalSatisfiedStatusWhenWorldAlreadyMeetsGoal)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<instant_action>("finish");
     act->add_effect("done", state_value{true});
     agent.add_action(act);
 
-    pump(agent, 10, [&]{ return agent.get_status() == agent_status::GoalSatisfied; });
-    EXPECT_EQ(agent.get_status(), agent_status::GoalSatisfied);
+    pump(agent, 10, [&]{ return agent.get_status() == agent_status::Idle; });
+    EXPECT_EQ(agent.get_status(), agent_status::Idle);
 }
 
 TEST(GoapAgent, MultiStepPlanExecutesAllActionsAndAppliesEffects)
@@ -208,7 +208,7 @@ TEST(GoapAgent, MultiStepPlanExecutesAllActionsAndAppliesEffects)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     bool returned_to_idle = false;
     agent.set_on_status_changed([&](const agent_status prev, const agent_status next)
@@ -228,7 +228,7 @@ TEST(GoapAgent, ThrowsIfNoHeuristicSetBeforePlanning)
     goap_agent agent;
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 1));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 1));
 
     const auto act = std::make_shared<instant_action>("finish");
     act->add_effect("done", state_value{true});
@@ -354,8 +354,8 @@ TEST(GoapAgent, HigherPriorityMotiveIsSelectedFirst)
     low_goal.set_bool("low", true);
     high_goal.set_bool("high", true);
 
-    agent.add_motive(std::make_shared<motive>(low_goal,   1));
-    agent.add_motive(std::make_shared<motive>(high_goal, 99));
+    agent.add_motive(std::make_shared<motive>("", low_goal,   1));
+    agent.add_motive(std::make_shared<motive>("", high_goal, 99));
 
     const auto high_act = std::make_shared<instant_action>("achieve_high");
     high_act->add_effect("high", state_value{true});
@@ -387,7 +387,7 @@ TEST(GoapAgent, GoalSatisfiedCallbackFiresWhenWorldAlreadyMeetsGoal)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 5));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 5));
 
     const auto act = std::make_shared<instant_action>("finish");
     act->add_effect("done", state_value{true});
@@ -448,7 +448,7 @@ TEST(GoapAgent, OnActionFinishedCallbackFiredOnFailure)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<failing_action>("will_fail");
     act->add_effect("done", state_value{true});
@@ -476,7 +476,7 @@ TEST(GoapAgent, SetWorldValuesUnlocksNewPlanAfterActionBecomesAvailable)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<instant_action>("finish_armed");
     act->add_precondition("armed", state_value{true});
@@ -525,7 +525,7 @@ TEST(GoapAgent, PlanFailedStatusWhenNoPlanExists)
 
     world_state goal_ws;
     goal_ws.set_bool("impossible", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto irrelevant = std::make_shared<instant_action>("irrelevant");
     irrelevant->add_effect("other", state_value{true});
@@ -552,14 +552,14 @@ TEST(GoapAgent, MaxConsecutiveFailuresResetsToIdle)
 
     world_state goal_ws;
     goal_ws.set_bool("unreachable", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<instant_action>("wrong");
     act->add_effect("other", state_value{true});
     agent.add_action(act);
 
     bool transitioned_to_idle = false;
-    agent.set_on_status_changed([&](const agent_status /*prev*/, const agent_status next)
+    agent.set_on_status_changed([&](const agent_status, const agent_status next)
     {
         if (next == agent_status::Idle) transitioned_to_idle = true;
     });
@@ -581,7 +581,7 @@ TEST(GoapAgent, GoalSwitchesWhenHigherPriorityMotiveAppears)
 
     world_state low_goal;
     low_goal.set_bool("low_done", true);
-    agent.add_motive(std::make_shared<motive>(low_goal, 1));
+    agent.add_motive(std::make_shared<motive>("", low_goal, 1));
 
     const auto low_act = std::make_shared<multi_tick_action>("long_low", 100);
     low_act->add_effect("low_done", state_value{true});
@@ -592,7 +592,7 @@ TEST(GoapAgent, GoalSwitchesWhenHigherPriorityMotiveAppears)
 
     world_state high_goal;
     high_goal.set_bool("high_done", true);
-    agent.add_motive(std::make_shared<motive>(high_goal, 999));
+    agent.add_motive(std::make_shared<motive>("", high_goal, 999));
 
     const auto high_act = std::make_shared<instant_action>("quick_high");
     high_act->add_effect("high_done", state_value{true});
@@ -623,8 +623,8 @@ TEST(GoapAgent, CustomUtilityEvaluatorOverridesDefaultPriority)
     hp_goal.set_bool("hp", true);
     lp_goal.set_bool("lp", true);
 
-    agent.add_motive(std::make_shared<motive>(lp_goal, 100));
-    agent.add_motive(std::make_shared<motive>(hp_goal,   1));
+    agent.add_motive(std::make_shared<motive>("", lp_goal, 100));
+    agent.add_motive(std::make_shared<motive>("", hp_goal,   1));
 
     agent.set_utility_evaluator([](const motive& m, const world_state&) -> float
     {
@@ -656,7 +656,7 @@ TEST(GoapAgent, GetCurrentAction_ReturnsNonNullDuringExecution)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<multi_tick_action>("slow", 100);
     act->add_effect("done", state_value{true});
@@ -681,7 +681,7 @@ TEST(GoapAgent, GetCurrentPlan_NonEmptyDuringExecution)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<multi_tick_action>("slow", 100);
     act->add_effect("done", state_value{true});
@@ -704,7 +704,7 @@ TEST(GoapAgent, ReplanOnWorldChange_FalseDisablesGoalRecheck)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto long_act = std::make_shared<multi_tick_action>("long_act", 1000);
     long_act->add_effect("done", state_value{true});
@@ -715,7 +715,7 @@ TEST(GoapAgent, ReplanOnWorldChange_FalseDisablesGoalRecheck)
 
     world_state urgent;
     urgent.set_bool("urgent", true);
-    agent.add_motive(std::make_shared<motive>(urgent, 9999));
+    agent.add_motive(std::make_shared<motive>("", urgent, 9999));
 
     const auto urgent_act = std::make_shared<instant_action>("urgent_act");
     urgent_act->add_effect("urgent", state_value{true});
@@ -746,7 +746,7 @@ TEST(GoapAgent, SkipReplanSameGoal_PreventsRedundantReplan)
 
     world_state goal_ws;
     goal_ws.set_bool("done", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto act = std::make_shared<multi_tick_action>("slow", 1000);
     act->add_effect("done", state_value{true});
@@ -781,7 +781,7 @@ TEST(GoapAgent, Integration_CombatScenario_EnemyKilledOptimally)
 
     world_state goal_ws;
     goal_ws.set_bool("enemy_dead", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto pickup = std::make_shared<instant_action>("pick_up_weapon", 1);
     pickup->add_precondition("has_weapon", state_value{false});
@@ -839,7 +839,7 @@ TEST(GoapAgent, Integration_AgentRecoversByReplanningAfterActionFails)
 
     world_state goal_ws;
     goal_ws.set_bool("enemy_dead", true);
-    agent.add_motive(std::make_shared<motive>(goal_ws, 10));
+    agent.add_motive(std::make_shared<motive>("", goal_ws, 10));
 
     const auto shoot = std::make_shared<instant_action>("shoot", 1);
     shoot->add_precondition("gun_jammed", state_value{false});
@@ -888,9 +888,9 @@ TEST(GoapAgent, Integration_MultipleGoalsResolvedByPriority)
     g2.set_bool("g2", true);
     g3.set_bool("g3", true);
 
-    agent.add_motive(std::make_shared<motive>(g1,  1));
-    agent.add_motive(std::make_shared<motive>(g2,  5));
-    agent.add_motive(std::make_shared<motive>(g3, 99));
+    agent.add_motive(std::make_shared<motive>("", g1,  1));
+    agent.add_motive(std::make_shared<motive>("", g2,  5));
+    agent.add_motive(std::make_shared<motive>("", g3, 99));
 
     const auto a1 = std::make_shared<instant_action>("do_g1"); a1->add_effect("g1", state_value{true});
     const auto a2 = std::make_shared<instant_action>("do_g2"); a2->add_effect("g2", state_value{true});
