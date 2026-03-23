@@ -171,6 +171,12 @@ namespace rida_goap
 
         executor.set_plan(result, active_goal_state);
         transition_to(agent_status::Executing);
+
+        if (on_action_started && !result.actions.empty())
+        {
+            cached_current_action = result.actions.front();
+            on_action_started(*cached_current_action);
+        }
     }
 
     void goap_agent::phase_executing(float delta_time)
