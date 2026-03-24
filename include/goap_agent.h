@@ -120,6 +120,7 @@ namespace rida_goap
         void set_on_action_finished (action_finished_cb cb);
         void set_on_goal_satisfied (goal_satisfied_cb cb);
 
+        void mark_world_dirty();
     private:
         void transition_to(agent_status next);
 
@@ -136,7 +137,6 @@ namespace rida_goap
 
         [[nodiscard]] bool should_recheck_goal() const noexcept;
         [[nodiscard]] bool goal_has_changed(const motive& candidate) const noexcept;
-        void mark_world_dirty();
 
         bool check_and_handle_goal_satisfied(const std::shared_ptr<motive>& motive);
         [[nodiscard]] bool consume_world_dirty() noexcept;
