@@ -20,7 +20,8 @@ namespace rida_goap
         Planning,
         Executing,
         PlanFailed,
-        Interrupted
+        Interrupted,
+        NoMotives
     };
 
     struct agent_config

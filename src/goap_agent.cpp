@@ -28,6 +28,7 @@ namespace rida_goap
 
         switch (status)
         {
+            case agent_status::NoMotives:
             case agent_status::Idle:
             case agent_status::PlanFailed:
                 phase_idle(delta_time);
@@ -46,7 +47,23 @@ namespace rida_goap
     void goap_agent::phase_idle(float)
     {
         if (actions.empty()) return;
-        for (const auto& m : selector.get_motives())
+
+        const auto& motives = selector.get_motives();
+        const bool has_active_motive = std::ranges::any_of(motives,
+            [](const auto& m) { return m->get_priority() > 0; });
+
+        if (!has_active_motive)
+        {
+            transition_to(agent_status::NoMotives);
+            return;
+        }
+
+        if (status == agent_status::NoMotives)
+        {
+            transition_to(agent_status::Idle);
+        }
+
+        for (const auto& m : motives)
         {
             if (m->get_priority() <= 0) continue;
             if (check_and_handle_goal_satisfied(m)) return;
