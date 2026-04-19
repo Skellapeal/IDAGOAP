@@ -124,7 +124,7 @@ TEST(GoapAgent, TickWithNoActionsRemainsIdle)
     EXPECT_EQ(agent.get_status(), agent_status::Idle);
 }
 
-TEST(GoapAgent, TickWithNoMotivesRemainsIdle)
+TEST(GoapAgent, TickWithNoMotivesRemainsNoMotives)
 {
     const agent_config config;
     goap_agent agent(config);
@@ -135,7 +135,7 @@ TEST(GoapAgent, TickWithNoMotivesRemainsIdle)
     agent.add_action(act);
 
     agent.tick(0.016f);
-    EXPECT_EQ(agent.get_status(), agent_status::Idle);
+    EXPECT_EQ(agent.get_status(), agent_status::NoMotives);
 }
 
 TEST_F(SimpleAgentFixture, ReachesExecutingAfterPlanFound)
@@ -339,7 +339,7 @@ TEST_F(SimpleAgentFixture, ClearMotivesStopsGoalSelection)
 {
     agent.clear_motives();
     for (int i = 0; i < 20; ++i) agent.tick(0.016f);
-    EXPECT_EQ(agent.get_status(), agent_status::Idle);
+    EXPECT_EQ(agent.get_status(), agent_status::NoMotives);
 }
 
 TEST(GoapAgent, HigherPriorityMotiveIsSelectedFirst)

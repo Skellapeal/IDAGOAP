@@ -54,7 +54,10 @@ namespace rida_goap
 
         if (!has_active_motive)
         {
-            transition_to(agent_status::NoMotives);
+            if (status != agent_status::NoMotives)
+            {
+                transition_to(agent_status::NoMotives);
+            }
             return;
         }
 

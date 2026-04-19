@@ -280,6 +280,7 @@ TEST(PlanExecutor, LifecycleCallbacksInvokedByExecutor)
     t->add_effect("done", state_value{true});
     ex.set_plan(build_plan({t}), goal);
     ex.tick(0.016f);
+    ex.tick(0.016f);
 
     EXPECT_TRUE(t->started);
     EXPECT_TRUE(t->ended);
@@ -334,6 +335,7 @@ TEST(PlanExecutor, SuccessReportedSameTickLastActionCompletes)
     a->add_effect("done", state_value{true});
     ex.set_plan(build_plan({a}), goal);
 
+    ex.tick(0.016f);
     const auto result = ex.tick(0.016f);
 
     EXPECT_EQ(result.status, execution_status::Success);
@@ -352,6 +354,7 @@ TEST(PlanExecutor, EffectsAppliedToWorldOnActionSuccess)
     a->add_effect("has_weapon", state_value{true});
     ex.set_plan(build_plan({a}), goal);
 
+    ex.tick(0.016f);
     ex.tick(0.016f);
 
     ASSERT_TRUE(ws.get_bool("has_weapon").has_value());
@@ -465,6 +468,7 @@ TEST(PlanExecutor, FailureReasonContainsActionNameOnActionFail)
     auto a = std::make_shared<failing_action>("named_fail_action", 1);
     ex.set_plan(build_plan({a}), goal);
 
+    ex.tick(0.016f);
     const auto result = ex.tick(0.016f);
 
     EXPECT_EQ(result.status, execution_status::Failed);
@@ -564,6 +568,7 @@ TEST(PlanExecutor, SuccessfulReplanResumesExecutionFromNewPlanStart)
     ex.set_plan(build_plan({fail}), goal);
 
     ex.tick(0.016f);
+    ex.tick(0.016f);
     EXPECT_EQ(replan_count, 1);
     EXPECT_EQ(ex.get_status(), execution_status::Running);
     EXPECT_EQ(ex.get_current_action_index(), 0u)
@@ -583,12 +588,15 @@ TEST(PlanExecutor, MultiActionPlanAdvancesIndexOnEachSuccess)
 
     ex.set_plan(build_plan({a1, a2, a3}), goal);
 
+    ex.tick(0.016);
     ex.tick(0.016f);
     EXPECT_EQ(ex.get_current_action_index(), 1u);
 
+    ex.tick(0.016);
     ex.tick(0.016f);
     EXPECT_EQ(ex.get_current_action_index(), 2u);
 
+    ex.tick(0.016);
     ex.tick(0.016f);
     EXPECT_EQ(ex.get_status(), execution_status::Success);
 }
