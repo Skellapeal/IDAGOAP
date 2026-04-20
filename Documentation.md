@@ -82,9 +82,10 @@ Used by ``world_state``, action effects, and stored conditions.
 Represents "world[key] predicate value".
 
 ```cpp
-struct state_condition {
-state_value s_value;
-predicate_op predicate = predicate_op::Equal;
+struct state_condition 
+{
+    state_value s_value;
+    predicate_op predicate = predicate_op::Equal;
 
     state_condition();
     state_condition(state_value value, predicate_op comparison = predicate_op::Equal);
