@@ -1,0 +1,23 @@
+@startuml IDAGOAP Architecture
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName monospaced
+
+package "rida_goap.h (single include)" {
+
+    component "goap_agent" as agent #LightBlue {
+
+        component "goal_selector\n(motives)" as gs
+        component "async_planner\n(rida_planner)" as ap
+        component "plan_executor" as pe
+    }
+
+    component "world_state\n(shared model)" as ws #LightYellow
+}
+
+agent --> ws : reads/writes
+gs --> ws : evaluates
+ap --> ws : plans against
+pe --> ws : applies effects
+
+@enduml
