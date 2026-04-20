@@ -44,13 +44,14 @@ Use this single header unless you have a specific reason to include a sub‑head
 Represents a comparison operator used in world state conditions and action preconditions.
 
 ```cpp
-enum class predicate_op {
-Equal,
-NotEqual,
-Less,
-LessOrEqual,
-Greater,
-GreaterOrEqual
+enum class predicate_op 
+{
+    Equal,
+    NotEqual,
+    Less,
+    LessOrEqual,
+    Greater,
+    GreaterOrEqual
 };
 ```
 ### Typical use‑cases:
